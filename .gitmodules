@@ -1,0 +1,3 @@
+[submodule "components/nabto-embedded-sdk"]
+	path = components/nabto-embedded-sdk
+	url = git@github.com:nabto/nabto-embedded-sdk
