@@ -1,4 +1,6 @@
-set(root_dir ${CMAKE_CURRENT_SOURCE_DIR}/../../..)
+set(root_dir ${CMAKE_CURRENT_SOURCE_DIR}/../../nabto-embedded-sdk)
+
+
 
 set(platform_src
   ${root_dir}/src/platform/np_error_code.c
@@ -144,3 +146,12 @@ idf_component_register(
     ${root_dir}/3rdparty/tinycbor/tinycbor/src
     .
   REQUIRES mbedtls)
+
+add_custom_target(GENERATE_NABTO_VERSION ALL
+  WORKING_DIRECTORY ${root_dir}/src/core
+  BYPRODUCTS ${root_dir}/src/core/nc_version.c
+  COMMAND ${CMAKE_COMMAND} -P
+  ${root_dir}/src/core/version.cmake
+  )
+
+add_dependencies(${COMPONENT_LIB} GENERATE_NABTO_VERSION)
