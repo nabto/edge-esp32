@@ -129,6 +129,7 @@ idf_component_register(
     "${core_src}"
     "${streaming_src}"
     "${coap_src}"
+    "${cbor_src}"
     "${cbor_extra_src}"
     "${stun_src}"
     "${mdns_src}"
