@@ -5,6 +5,7 @@
 #include <modules/dns/unix/nm_unix_dns.h>
 #include <modules/timestamp/unix/nm_unix_timestamp.h>
 #include <modules/select_unix/nm_select_unix.h>
+#include <modules/dtls/nm_random.h>
 
 #include "esp32_dns.h"
 #include "esp32_logging.h"
@@ -26,6 +27,12 @@ np_error_code nabto_device_init_platform_modules(struct np_platform* pl)
     nm_dtls_srv_init(pl);
     return NABTO_EC_OK;
 }
+
+void nabto_device_deinit_platform_modules(struct np_platform* pl)
+{
+    nm_random_deinit(pl);
+}
+
 
 int nabto_device_platform_inf_wait()
 {
