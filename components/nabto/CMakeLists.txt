@@ -125,12 +125,12 @@ set(adapter_src
 idf_component_register(
   SRCS
     "${platform_src}"
-    "${dtls_src}"
     "${core_src}"
     "${streaming_src}"
     "${coap_src}"
     "${cbor_src}"
     "${cbor_extra_src}"
+    "${dtls_src}"
     "${stun_src}"
     "${mdns_src}"
     "${api_src}"

@@ -25,13 +25,14 @@
 #define CHIP_NAME "ESP32-S2 Beta"
 #endif
 
-/* The examples use WiFi configuration that you can set via project configuration menu
+/**
+ * Setups .. you can set it up in the menuconfig or override them here
+ */
+#define EXAMPLE_ESP_WIFI_SSID		CONFIG_SSID
+#define EXAMPLE_ESP_WIFI_PASS		CONFIG_SSID_PASSWORD
 
-   If you'd rather not, just change the below entries to strings with
-   the config you want - ie #define EXAMPLE_WIFI_SSID "mywifissid"
-*/
-#define EXAMPLE_ESP_WIFI_SSID      ""
-#define EXAMPLE_ESP_WIFI_PASS      ""
+#define EXAMPLE_NABTO_PRODUCT		CONFIG_NABTO_DEVICE
+#define EXAMPLE_NABTO_DEVICE		CONFIG_NABTO_PRODUCT
 
 #define EXAMPLE_ESP_MAXIMUM_RETRY  10
 
@@ -46,7 +47,6 @@ static const char *TAG = "wifi station";
 
 static int s_retry_num = 0;
 
-static httpd_handle_t start_webserver(void);
 
 static void event_handler(void* arg, esp_event_base_t event_base,
                                 int32_t event_id, void* event_data)
@@ -128,14 +128,14 @@ void app_main(void)
     ESP_LOGI(TAG, "ESP_WIFI_MODE_STA");
     wifi_init_sta();
 
-// Start the webserver thread
-    start_webserver();
 
     NabtoDevice* dev = nabto_device_new();
     nabto_device_set_log_std_out_callback(dev);
-//    nabto_device_set_log_level(dev, "trace");
-    nabto_device_set_product_id(dev, "pr-zzjbojkh");
-    nabto_device_set_device_id(dev, "de-34kkfogz");
+    nabto_device_set_log_level(dev, "trace");
+    nabto_device_set_product_id(dev, EXAMPLE_NABTO_PRODUCT);
+    printf("Setting nabto product id : %s\n", EXAMPLE_NABTO_PRODUCT);
+    nabto_device_set_device_id(dev, EXAMPLE_NABTO_DEVICE);
+    printf("Setting nabto device id : %s\n", EXAMPLE_NABTO_DEVICE);
     nabto_device_set_server_url(dev, "a.devices.dev.nabto.net");
 
     size_t keyLength;
@@ -206,85 +206,3 @@ void app_main(void)
     esp_restart();
 }
 
-esp_err_t get_handler_1m(httpd_req_t *req)
-{
-    /* Send a simple response */
-    const char* resp =
-        "0123456789012345678901234567890123456789012345678\n"           \
-        "0123456789012345678901234567890123456789012345678\n"           \
-        "0123456789012345678901234567890123456789012345678\n"           \
-        "0123456789012345678901234567890123456789012345678\n"           \
-        "0123456789012345678901234567890123456789012345678\n"           \
-        "0123456789012345678901234567890123456789012345678\n"           \
-        "0123456789012345678901234567890123456789012345678\n"           \
-        "0123456789012345678901234567890123456789012345678\n"           \
-        "0123456789012345678901234567890123456789012345678\n"           \
-        "0123456789012345678901234567890123456789012345678\n"           \
-        "0123456789012345678901234567890123456789012345678\n"           \
-        "0123456789012345678901234567890123456789012345678\n"           \
-        "0123456789012345678901234567890123456789012345678\n"           \
-        "0123456789012345678901234567890123456789012345678\n"           \
-        "0123456789012345678901234567890123456789012345678\n"           \
-        "0123456789012345678901234567890123456789012345678\n"           \
-        "0123456789012345678901234567890123456789012345678\n"           \
-        "0123456789012345678901234567890123456789012345678\n"           \
-        "0123456789012345678901234567890123456789012345678\n"           \
-        "0123456789012345678901234567890123456789012345678\n";
-
-    // Create a 1k byte buffer chuck
-    char resp_1k[1000];
-    int len = 1000;
-    for(int i=0;i<10;i++) {
-        memcpy(resp_1k+(i*100), resp, 100);
-    }
-    resp_1k[999]=0;
-
-    int64_t start_time = esp_timer_get_time();
-
-    // Send 1m chunk
-    for(int t=0; t< 1000000/len; t++) {
-        int res = httpd_resp_send_chunk(req, (const char *) resp_1k, len);
-        if(res != ESP_OK) {
-            return ESP_FAIL;
-        }
-
-    }
-    // send last 0 chunk to end the stream
-    httpd_resp_send_chunk(req, (const char *) resp, 0);
-
-    int64_t end_time = esp_timer_get_time();
-    int64_t time = end_time - start_time;
-    float kb = 1000000/1024;
-
-    return ESP_OK;
-}
-
-/* URI handler structure for GET /1m */
-httpd_uri_t uri_get_1m = {
-    .uri      = "/1m",
-    .method   = HTTP_GET,
-    .handler  = get_handler_1m,
-    .user_ctx = NULL
-};
-
-/*
- * Function for starting the webserver
- */
-httpd_handle_t start_webserver(void)
-{
-    /* Generate default configuration */
-    httpd_config_t config = HTTPD_DEFAULT_CONFIG();
-    config.server_port = 8081;
-
-
-    /* Empty handle to esp_http_server */
-    httpd_handle_t server = NULL;
-
-    /* Start the httpd server */
-    if (httpd_start(&server, &config) == ESP_OK) {
-        /* Register URI handlers */
-         httpd_register_uri_handler(server, &uri_get_1m);
-     }
-    /* If server failed to start, handle will be NULL */
-    return server;
-}
