@@ -182,6 +182,9 @@ void app_main(void)
         NabtoDeviceCoapRequest* request;
         nabto_device_listener_new_coap_request(listener, future, &request);
         NabtoDeviceError ec = nabto_device_future_wait(future);
+
+        printf("Got request, after wait HERE HERE HERE HERE HERE HERE");
+
         if (ec) {
             esp_restart();
         }
