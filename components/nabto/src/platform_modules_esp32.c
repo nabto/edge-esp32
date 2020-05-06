@@ -25,6 +25,7 @@ np_error_code nabto_device_init_platform_modules(struct np_platform* pl)
     esp32_dns_init(pl);
     nm_dtls_cli_init(pl);
     nm_dtls_srv_init(pl);
+    nm_random_init(pl);
     return NABTO_EC_OK;
 }
 
