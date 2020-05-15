@@ -1,4 +1,4 @@
-set(root_dir ${CMAKE_CURRENT_SOURCE_DIR}/../../../nabto-embedded-sdk)
+set(root_dir ${CMAKE_CURRENT_SOURCE_DIR}/../../nabto-embedded-sdk)
 
 
 
