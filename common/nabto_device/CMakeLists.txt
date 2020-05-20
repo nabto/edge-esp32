@@ -39,6 +39,10 @@ set(core_src
   ${root_dir}/src/core/nc_version.c
   )
 
+set(nn_src
+  ${root_dir}/3rdparty/nn/nn/src/nn/vector.c
+  )
+
 set(dtls_src
   ${root_dir}/src/modules/dtls/nm_dtls_timer.c
   ${root_dir}/src/modules/dtls/nm_dtls_cli.c
@@ -147,8 +151,10 @@ idf_component_register(
     "${communication_buffer_src}"
     "${api_logging_src}"
     "${tcp_tunnels_src}"
+    "${nn_src}"
   INCLUDE_DIRS
     ${root_dir}/include
+    ${root_dir}/3rdparty/nn/nn/include
   PRIV_INCLUDE_DIRS
     ${root_dir}/src
     ${root_dir}/nabto-common-cpp/src
