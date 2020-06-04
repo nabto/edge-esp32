@@ -1,5 +1,9 @@
 
 #include "esp32_logging.h"
+
+#include <nabto/nabto_device.h>
+#include <nn/log.h>
+
 #include <nabto_types.h>
 #include <stdio.h>
 #include <time.h>
@@ -8,68 +12,92 @@
 
 #define NM_UNIX_LOGGING_FILE_LENGTH 24
 
-static void esp32_log (uint32_t severity, uint32_t module, uint32_t line, const char* file, const char* fmt, va_list args);
-static void esp32_log_buf(uint32_t severity, uint32_t module, uint32_t line, const char* file, const uint8_t* buf, size_t len);
+
+static void esp32_log(NabtoDeviceLogMessage* msg, void* data);
+static void nn_log_function(void* userData, enum nn_log_severity severity, const char* module, const char* file, int line, const char* fmt, va_list args);
 
 
-static uint32_t logSeverityFilter = NABTO_LOG_SEVERITY_LEVEL_INFO;
+static uint32_t logMask;
 
-void esp32_log_init()
+
+
+void esp32_logging_init(NabtoDevice* device, struct nn_log* logger)
 {
-    np_log.log = &esp32_log;
-    np_log.log_buf = &esp32_log_buf;
+    nabto_device_set_log_callback(device, esp32_log, NULL);
+    nabto_device_set_log_level(device, "trace");
 
-    logSeverityFilter = NABTO_LOG_SEVERITY_LEVEL_TRACE;
-
-
+    logMask = NN_LOG_SEVERITY_ERROR | NN_LOG_SEVERITY_WARN | NN_LOG_SEVERITY_INFO | NN_LOG_SEVERITY_TRACE;
+    
+    nn_log_init(logger, nn_log_function, NULL);
 }
 
-void esp32_log_buf(uint32_t severity, uint32_t module, uint32_t line, const char* file, const uint8_t* buf, size_t len){
-    // TODO
-    return;
+
+const char* truncated_file_name(const char* filename)
+{
+    size_t len = strlen(filename);
+    if (len > 24) {
+        return filename + (len-24);
+    } else {
+        return filename;
+    }
 }
 
-void esp32_log (uint32_t severity, uint32_t module, uint32_t line, const char* file, const char* fmt, va_list args)
+const char* line_as_str(int line)
 {
-    if(((logSeverityFilter & severity) && ((NABTO_LOG_MODULE_FILTER & module) || module == 0))) {
-        time_t sec;
-        unsigned int ms;
-        struct timeval tv;
-        struct tm tm;
-        gettimeofday(&tv, NULL);
-        sec = tv.tv_sec;
-        ms = tv.tv_usec/1000;
+    static char buffer[32];
+    if (line < 10) {
+        sprintf(buffer, "%d   ", line);
+    } else if (line < 100) {
+        sprintf(buffer, "%d  ", line);
+    } else if (line < 1000) {
+        sprintf(buffer, "%d ", line);
+    } else {
+        sprintf(buffer, "%d", line);
+    }
+    return buffer;
+}
 
-        localtime_r(&sec, &tm);
+const char* device_severity_as_string(NabtoDeviceLogLevel severity)
+{
+    switch (severity) {
+        case NABTO_DEVICE_LOG_FATAL: return "FATAL";
+        case NABTO_DEVICE_LOG_ERROR: return "ERROR";
+        case NABTO_DEVICE_LOG_WARN:  return "WARN ";
+        case NABTO_DEVICE_LOG_INFO:  return "INFO ";
+        case NABTO_DEVICE_LOG_TRACE: return "TRACE";
+    }
+    return "NONE ";
+}
 
-        size_t fileLen = strlen(file);
-        char fileTmp[NM_UNIX_LOGGING_FILE_LENGTH+4];
-        if(fileLen > NM_UNIX_LOGGING_FILE_LENGTH) {
-            strcpy(fileTmp, "...");
-            strcpy(fileTmp + 3, file + fileLen - NM_UNIX_LOGGING_FILE_LENGTH);
-        } else {
-            strcpy(fileTmp, file);
-        }
-        char level[6];
-        switch(severity) {
-            case NABTO_LOG_SEVERITY_ERROR:
-                strcpy(level, "ERROR");
-                break;
-            case NABTO_LOG_SEVERITY_WARN:
-                strcpy(level, "_WARN");
-                break;
-            case NABTO_LOG_SEVERITY_INFO:
-                strcpy(level, "_INFO");
-                break;
-            case NABTO_LOG_SEVERITY_TRACE:
-                strcpy(level, "TRACE");
-                break;
-        }
 
-        printf("%02u:%02u:%02u:%03u %s(%03u)[%s] ",
-               tm.tm_hour, tm.tm_min, tm.tm_sec, ms,
-               fileTmp, line, level);
+
+void esp32_log(NabtoDeviceLogMessage* msg, void* data)
+{
+    printf("%s:%s %s - ", truncated_file_name(msg->file), line_as_str(msg->line), device_severity_as_string(msg->severity));
+    printf("%s\n", msg->message);
+}
+
+
+const char* nn_log_severity_as_str(enum nn_log_severity severity)
+{
+    switch(severity) {
+        case NN_LOG_SEVERITY_ERROR: return "ERROR";
+        case NN_LOG_SEVERITY_WARN:  return "WARN ";
+        case NN_LOG_SEVERITY_INFO:  return "INFO ";
+        case NN_LOG_SEVERITY_TRACE: return "TRACE";
+    }
+    return "NONE ";
+}
+
+
+void nn_log_function(void* userData, enum nn_log_severity severity, const char* module, const char* file, int line, const char* fmt, va_list args)
+{
+    printf("LOGSTART\n");
+    if ((severity & logMask) != 0) {
+        printf("%s:%s %s - ", truncated_file_name(file), line_as_str(line), nn_log_severity_as_str(severity));
         vprintf(fmt, args);
         printf("\n");
     }
+    printf("LOGEND\n");
 }
+
