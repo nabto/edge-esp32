@@ -15,20 +15,20 @@ set(ne_mbedtls_util ${ne_dir}/src/modules/mbedtls/nm_mbedtls_util.c)
 # Nabto select unix impl. unix adopted to esp32
 set(ne_esp32_dir ./src)
 set(ne_select_esp32_src
-  ${ne_esp32_dir}/nm_select_unix.c			
+  ${ne_esp32_dir}/nm_select_unix.c
   ${ne_esp32_dir}/nm_select_unix_udp.c
   ${ne_esp32_dir}/nm_select_unix_tcp.c
-  ${ne_esp32_dir}/platform_modules_esp32.c	
+  ${ne_esp32_dir}/platform_modules_esp32.c
   ${ne_esp32_dir}/select_unix_event_queue.c
-  ${ne_esp32_dir}/esp32_logging.c	
+  ${ne_esp32_dir}/esp32_logging.c
 )
 
 set(ne_esp32_dns_src
-  ${ne_esp32_dir}/esp32_dns.c	
+  ${ne_esp32_dir}/esp32_dns.c
 )
 
 set(ne_esp32_mdns_src
-  ${ne_esp32_dir}/esp32_mdns.c	
+  #${ne_esp32_dir}/esp32_mdns.c
 )
 
 idf_component_register(
@@ -49,7 +49,7 @@ idf_component_register(
     ${ne_tcp_tunnel_src}
     ${ne_esp32_logging}
     ${ne_esp32_dns_src}
-    ${ne_esp32_mdns_src}	
+    ${ne_esp32_mdns_src}
   INCLUDE_DIRS
     ${ne_include_dirs}
   PRIV_INCLUDE_DIRS
@@ -71,6 +71,3 @@ add_custom_target(GENERATE_NABTO_VERSION ALL
   )
 
 add_dependencies(${COMPONENT_LIB} GENERATE_NABTO_VERSION)
-
-
-

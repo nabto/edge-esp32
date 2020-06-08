@@ -17,13 +17,6 @@
 #include <arpa/inet.h>
 #include <net/if.h>
 
-#if defined(__unix__)
-#include <ifaddrs.h>
-#elifdef ESP_PLATFORM
-#warning ESP
-#endif
-
-
 #define LOG NABTO_LOG_MODULE_UDP
 
 /**
@@ -35,7 +28,7 @@ static void nm_select_unix_udp_free_socket(struct np_udp_socket* sock);
 /**
  * Api function declarations
  */
-static np_error_code nm_select_unix_udp_create(struct np_platform* pl, struct np_udp_socket** sock);
+static np_error_code nm_select_unix_udp_create(struct np_udp* obj, struct np_udp_socket** sock);
 static void nm_select_unix_udp_destroy(struct np_udp_socket* sock);
 static void nm_select_unix_udp_abort(struct np_udp_socket* sock);
 static void nm_select_unix_udp_async_bind_port(struct np_udp_socket* sock, uint16_t port, struct np_completion_event* completionEvent);
@@ -53,31 +46,32 @@ static np_error_code udp_recv_from(struct np_udp_socket* sock, struct np_udp_end
 static np_error_code bind_port(struct np_udp_socket* s, uint16_t port);
 static uint16_t get_local_port(struct np_udp_socket* s);
 static np_error_code create_socket_any(struct np_udp_socket* s);
-static np_error_code create_socket_ipv6(struct np_udp_socket* s);
-static np_error_code create_socket_ipv4(struct np_udp_socket* s);
 
-np_error_code nm_select_unix_udp_init(struct nm_select_unix* ctx, struct np_platform *pl)
+
+
+static struct np_udp_functions vtable = {
+    .create           = &nm_select_unix_udp_create,
+    .destroy          = &nm_select_unix_udp_destroy,
+    .abort            = &nm_select_unix_udp_abort,
+    .async_bind_port  = &nm_select_unix_udp_async_bind_port,
+    .async_bind_mdns_ipv4 = &nm_select_unix_async_bind_mdns_ipv4,
+    .async_bind_mdns_ipv6 = &nm_select_unix_async_bind_mdns_ipv6,
+    .async_send_to    = &nm_select_unix_udp_async_send_to,
+    .async_recv_wait  = &nm_select_unix_udp_async_recv_wait,
+    .recv_from        = &nm_select_unix_udp_recv_from,
+    .get_local_port   = &nm_select_unix_udp_get_local_port
+};
+
+
+struct np_udp nm_select_unix_udp_get_impl(struct nm_select_unix* ctx)
 {
-    pl->udp.create           = &nm_select_unix_udp_create;
-    pl->udp.destroy          = &nm_select_unix_udp_destroy;
-    pl->udp.abort            = &nm_select_unix_udp_abort;
-    pl->udp.async_bind_port  = &nm_select_unix_udp_async_bind_port;
-//    pl->udp.async_bind_mdns_ipv4 = &nm_select_unix_async_bind_mdns_ipv4;
-//    pl->udp.async_bind_mdns_ipv6 = &nm_select_unix_async_bind_mdns_ipv6;
-    pl->udp.async_send_to    = &nm_select_unix_udp_async_send_to;
-    pl->udp.async_recv_wait  = &nm_select_unix_udp_async_recv_wait;
-    pl->udp.recv_from        = &nm_select_unix_udp_recv_from;
-    pl->udp.get_local_port   = &nm_select_unix_udp_get_local_port;
-    pl->udpData = ctx;
-
-    return NABTO_EC_OK;
+    struct np_udp obj;
+    obj.vptr = &vtable;
+    obj.data = ctx;
+    return obj;
 }
 
-void nm_select_unix_udp_deinit(struct nm_select_unix* ctx)
-{
-}
-
-np_error_code nm_select_unix_udp_create(struct np_platform* pl, struct np_udp_socket** sock)
+np_error_code nm_select_unix_udp_create(struct np_udp* obj, struct np_udp_socket** sock)
 {
     struct np_udp_socket* s = calloc(1, sizeof(struct np_udp_socket));
     if (!s) {
@@ -86,10 +80,9 @@ np_error_code nm_select_unix_udp_create(struct np_platform* pl, struct np_udp_so
     *sock = s;
     s->sock = -1;
 
-    struct nm_select_unix* selectCtx = pl->udpData;
+    struct nm_select_unix* selectCtx = obj->data;
 
-    s->pl = selectCtx->pl;
-    s->selectCtx = pl->udpData;
+    s->selectCtx = selectCtx;
     s->aborted = false;
 
     nn_llist_append(&selectCtx->udpSockets, &s->udpSocketsNode, s);
@@ -128,69 +121,14 @@ void nm_select_unix_udp_async_bind_port(struct np_udp_socket* sock, uint16_t por
     np_completion_event_resolve(completionEvent, ec);
 }
 
-np_error_code nm_select_unix_async_bind_mdns_ipv4_ec(struct np_udp_socket* sock)
-{
-    if (sock->aborted) {
-        NABTO_LOG_ERROR(LOG, "bind called on aborted socket");
-        return NABTO_EC_ABORTED;
-    }
-
-    np_error_code ec;
-    ec = create_socket_ipv4(sock);
-
-    if (ec != NABTO_EC_OK) {
-        return ec;
-    }
-
-    if (!nm_unix_init_mdns_ipv4_socket(sock->sock)) {
-        close(sock->sock);
-        return NABTO_EC_UDP_SOCKET_CREATION_ERROR;
-    }
-
-    nm_unix_mdns_update_ipv4_socket_registration(sock->sock);
-
-    return NABTO_EC_OK;
-}
-
 void nm_select_unix_async_bind_mdns_ipv4(struct np_udp_socket* sock, struct np_completion_event* completionEvent)
 {
-    np_error_code ec = nm_select_unix_async_bind_mdns_ipv4_ec(sock);
-    np_completion_event_resolve(completionEvent, ec);
-}
-
-np_error_code nm_select_unix_async_bind_mdns_ipv6_ec(struct np_udp_socket* sock)
-{
-    if (sock->aborted) {
-        NABTO_LOG_ERROR(LOG, "bind called on aborted socket");
-        return NABTO_EC_ABORTED;
-    }
-
-    np_error_code ec = create_socket_ipv6(sock);
-    if (ec) {
-        return ec;
-    }
-
-    int no = 0;
-    int status = setsockopt(sock->sock, IPPROTO_IPV6, IPV6_V6ONLY, (void* ) &no, sizeof(no));
-    if (status < 0)
-    {
-        NABTO_LOG_ERROR(LOG, "Cannot set IPV6_V6ONLY");
-    }
-
-    if (!nm_unix_init_mdns_ipv6_socket(sock->sock)) {
-        close(sock->sock);
-        return NABTO_EC_UDP_SOCKET_CREATION_ERROR;
-    }
-
-    nm_unix_mdns_update_ipv6_socket_registration(sock->sock);
-
-    return NABTO_EC_OK;
+    np_completion_event_resolve(completionEvent, NABTO_EC_NOT_IMPLEMENTED);
 }
 
 void nm_select_unix_async_bind_mdns_ipv6(struct np_udp_socket* sock, struct np_completion_event* completionEvent)
 {
-    np_error_code ec = nm_select_unix_async_bind_mdns_ipv6_ec(sock);
-    np_completion_event_resolve(completionEvent, ec);
+    np_completion_event_resolve(completionEvent, NABTO_EC_NOT_IMPLEMENTED);
 }
 
 np_error_code nm_select_unix_udp_async_send_to_ec(struct np_udp_socket* sock, struct np_udp_endpoint* ep,
@@ -200,7 +138,7 @@ np_error_code nm_select_unix_udp_async_send_to_ec(struct np_udp_socket* sock, st
         NABTO_LOG_ERROR(LOG, "send to called on aborted socket");
         return NABTO_EC_ABORTED;
     }
-    NABTO_LOG_TRACE(LOG, "Before udp_send_to");
+
     np_error_code ec = udp_send_to(sock, ep, buffer, bufferSize);
     if (ec != NABTO_EC_OK) {
         return ec;
@@ -497,35 +435,6 @@ np_error_code create_socket_any(struct np_udp_socket* s)
             return NABTO_EC_UDP_SOCKET_CREATION_ERROR;
         }
     }
-    s->sock = sock;
-    return NABTO_EC_OK;
-}
-
-np_error_code create_socket_ipv6(struct np_udp_socket* s)
-{
-    int sock = nonblocking_socket(AF_INET6, SOCK_DGRAM);
-    if (sock == -1) {
-        return NABTO_EC_UDP_SOCKET_CREATION_ERROR;
-    }
-
-    int no = 0;
-    int status = setsockopt(sock, IPPROTO_IPV6, IPV6_V6ONLY, (void* ) &no, sizeof(no));
-    if (status < 0) {
-        NABTO_LOG_ERROR(LOG, "Cannot set IPV6_V6ONLY");
-    }
-
-    s->type = NABTO_IPV6;
-    s->sock = sock;
-    return NABTO_EC_OK;
-}
-
-np_error_code create_socket_ipv4(struct np_udp_socket* s)
-{
-    int sock = nonblocking_socket(AF_INET, SOCK_DGRAM);
-    if (sock == -1) {
-        return NABTO_EC_UDP_SOCKET_CREATION_ERROR;
-    }
-    s->type = NABTO_IPV4;
     s->sock = sock;
     return NABTO_EC_OK;
 }
