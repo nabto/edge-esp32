@@ -108,8 +108,6 @@ np_error_code nabto_device_platform_init(struct nabto_device_context* device, st
 
     //nabto_device_integration_set_mdns_impl(struct nabto_device_context* device, struct np_mdns* mdns);
 
-    return NABTO_EC_OK;
-
     platform->networkThread = nabto_device_threads_create_thread();
     if(nabto_device_threads_run(platform->networkThread, network_thread, platform) != 0) {
         // TODO

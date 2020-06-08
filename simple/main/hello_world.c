@@ -143,11 +143,11 @@ void app_main(void)
     printf("Main task: waiting for connection to the wifi network... ");
     xEventGroupWaitBits(s_wifi_event_group, WIFI_CONNECTED_BIT, false, true, portMAX_DELAY);
     printf("connected!\n");
-    
+
     // print the local IP address
     tcpip_adapter_ip_info_t ip_info;
     ESP_ERROR_CHECK(tcpip_adapter_get_ip_info(TCPIP_ADAPTER_IF_STA, &ip_info));
-    
+
     printf("IP Address:  %s_wifi_event_group\n", ip4addr_ntoa(&ip_info.ip));
     printf("Subnet mask: %s\n", ip4addr_ntoa(&ip_info.netmask));
     printf("Gateway:     %s\n", ip4addr_ntoa(&ip_info.gw));
@@ -155,8 +155,6 @@ void app_main(void)
 
     NabtoDevice* dev = nabto_device_new();
 
-    printf("HERHERHER\n");
-    
     struct nn_log logger;
     esp32_logging_init(dev, &logger);
 

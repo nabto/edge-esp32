@@ -45,7 +45,7 @@ int nm_select_unix_inf_wait(struct nm_select_unix* ctx)
     if (nfds < 0) {
         NABTO_LOG_ERROR(LOG, "Error in select: (%i) '%s'", errno, strerror(errno));
     } else {
-        NABTO_LOG_TRACE(LOG, "select returned with %i file descriptors", nfds);
+        //NABTO_LOG_TRACE(LOG, "select returned with %i file descriptors", nfds);
     }
     return nfds;
 }
@@ -67,7 +67,7 @@ int nm_select_unix_timed_wait(struct nm_select_unix* ctx, uint32_t ms)
 
 void nm_select_unix_read(struct nm_select_unix* ctx, int nfds)
 {
-    NABTO_LOG_TRACE(LOG, "read: %i", nfds);
+    //NABTO_LOG_TRACE(LOG, "read: %i", nfds);
 
     nm_select_unix_udp_handle_select(ctx, nfds);
     nm_select_unix_tcp_handle_select(ctx, nfds);
