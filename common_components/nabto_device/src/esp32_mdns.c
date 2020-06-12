@@ -1,19 +1,14 @@
 #include "esp32_mdns.h"
 #include "mdns.h"
 
-#include <platform/np_error_code.h>
-#include <platform/np_ip_address.h>
-#include <platform/np_completion_event.h>
 #include <platform/interfaces/np_mdns.h>
-
-
-#include <lwip/dns.h>
-#include <lwip/ip_addr.h>
+#include <platform/np_util.h>
 
 #include <string.h>
 
-
 static void publish_service(struct np_mdns* obj, uint16_t port, const char* productId, const char* deviceId);
+
+
 
 void esp32_mdns_start()
 {
@@ -26,7 +21,15 @@ void esp32_mdns_start()
     }
 
     //set hostname
-    mdns_hostname_set("my-esp32");
+
+    uint8_t mac[6];
+    esp_read_mac(mac, 0);
+
+    char macString[13];
+    memset(macString, 0, 13);
+    np_data_to_hex(mac, 6, macString);
+
+    mdns_hostname_set(macString);
 }
 
 void esp32_mdns_stop()
