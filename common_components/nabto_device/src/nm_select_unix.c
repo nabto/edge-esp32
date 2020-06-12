@@ -20,6 +20,11 @@
  * Helper function declarations
  */
 void nm_select_unix_build_fd_sets();
+static void* network_thread(void* data);
+
+static int nm_select_unix_inf_wait(struct nm_select_unix* ctx);
+
+static void nm_select_unix_read(struct nm_select_unix* ctx, int nfds);
 
 /**
  * Api functions start
@@ -28,9 +33,35 @@ np_error_code nm_select_unix_init(struct nm_select_unix* ctx)
 {
     nn_llist_init(&ctx->udpSockets);
     nn_llist_init(&ctx->tcpSockets);
+    ctx->stopped = false;
+    ctx->thread = 0;
 
     return NABTO_EC_OK;
 }
+
+void nm_select_unix_deinit(struct nm_select_unix* ctx)
+{
+    nm_select_unix_stop(ctx);
+
+    if (ctx->thread != 0) {
+        pthread_join(ctx->thread, NULL);
+    }
+}
+
+void nm_select_unix_run(struct nm_select_unix* ctx)
+{
+    pthread_create(&ctx->thread, NULL, &network_thread, ctx);
+}
+
+void nm_select_unix_stop(struct nm_select_unix* ctx)
+{
+    if (ctx->stopped) {
+        return;
+    }
+    ctx->stopped = true;
+    nm_select_unix_notify(ctx);
+}
+
 
 int nm_select_unix_inf_wait(struct nm_select_unix* ctx)
 {
@@ -95,4 +126,21 @@ void nm_select_unix_build_fd_sets(struct nm_select_unix* ctx)
 
 void nm_select_unix_notify(struct nm_select_unix* ctx)
 {
+}
+
+void* network_thread(void* data)
+{
+    struct nm_select_unix* ctx = data;
+    while(true) {
+        int nfds;
+
+        if (ctx->stopped) {
+            return NULL;
+        } else {
+            // Wait for events.
+            nfds = nm_select_unix_inf_wait(ctx);
+            nm_select_unix_read(ctx, nfds);
+        }
+    }
+    return NULL;
 }

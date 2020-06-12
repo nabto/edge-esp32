@@ -2,7 +2,7 @@
 #define _SELECT_UNIX_EVENT_QUEUE_H_
 
 #include <modules/event_queue/nm_event_queue.h>
-#include <src/api/nabto_device_threads.h>
+#include <api/nabto_device_threads.h>
 
 /**
  * Since we are running everything from one thread we can directly use

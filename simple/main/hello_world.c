@@ -167,6 +167,8 @@ void app_main(void)
     printf("Setting nabto device id : %s\n", EXAMPLE_NABTO_DEVICE);
     nabto_device_set_server_url(dev, "a.devices.dev.nabto.net");
 
+    nabto_device_enable_mdns(dev);
+
     size_t keyLength;
     nvs_handle_t handle;
     nvs_open("nabto", NVS_READWRITE, &handle);

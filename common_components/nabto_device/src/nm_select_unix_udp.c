@@ -32,8 +32,6 @@ static np_error_code nm_select_unix_udp_create(struct np_udp* obj, struct np_udp
 static void nm_select_unix_udp_destroy(struct np_udp_socket* sock);
 static void nm_select_unix_udp_abort(struct np_udp_socket* sock);
 static void nm_select_unix_udp_async_bind_port(struct np_udp_socket* sock, uint16_t port, struct np_completion_event* completionEvent);
-static void nm_select_unix_async_bind_mdns_ipv4(struct np_udp_socket* sock, struct np_completion_event* completionEvent);
-static void nm_select_unix_async_bind_mdns_ipv6(struct np_udp_socket* sock, struct np_completion_event* completionEvent);
 static void nm_select_unix_udp_async_send_to(struct np_udp_socket* sock, struct np_udp_endpoint* ep,
                                              uint8_t* buffer, uint16_t bufferSize,
                                              struct np_completion_event* completionEvent);
@@ -54,8 +52,6 @@ static struct np_udp_functions vtable = {
     .destroy          = &nm_select_unix_udp_destroy,
     .abort            = &nm_select_unix_udp_abort,
     .async_bind_port  = &nm_select_unix_udp_async_bind_port,
-    .async_bind_mdns_ipv4 = &nm_select_unix_async_bind_mdns_ipv4,
-    .async_bind_mdns_ipv6 = &nm_select_unix_async_bind_mdns_ipv6,
     .async_send_to    = &nm_select_unix_udp_async_send_to,
     .async_recv_wait  = &nm_select_unix_udp_async_recv_wait,
     .recv_from        = &nm_select_unix_udp_recv_from,
