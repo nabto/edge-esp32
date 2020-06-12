@@ -15,7 +15,13 @@
 #include "lwip/err.h"
 #include "lwip/sys.h"
 
+#include "device_event_handler.h"
+
+
 #include <nabto/nabto_device.h>
+#include <nn/log.h>
+
+#include <esp32_logging.h>
 
 #ifdef CONFIG_IDF_TARGET_ESP32
 #define CHIP_NAME "ESP32"
@@ -47,6 +53,10 @@ static const char *TAG = "wifi station";
 
 static int s_retry_num = 0;
 
+
+static void start_listen(struct device_event_handler* handler);
+static void callback(NabtoDeviceFuture* future, NabtoDeviceError ec, void* userData);
+static void handle_event(struct device_event_handler* handler, NabtoDeviceEvent event);
 
 static void event_handler(void* arg, esp_event_base_t event_base,
                                 int32_t event_id, void* event_data)
@@ -129,14 +139,35 @@ void app_main(void)
     wifi_init_sta();
 
 
+    // wait for connection
+    printf("Main task: waiting for connection to the wifi network... ");
+    xEventGroupWaitBits(s_wifi_event_group, WIFI_CONNECTED_BIT, false, true, portMAX_DELAY);
+    printf("connected!\n");
+
+    // print the local IP address
+    tcpip_adapter_ip_info_t ip_info;
+    ESP_ERROR_CHECK(tcpip_adapter_get_ip_info(TCPIP_ADAPTER_IF_STA, &ip_info));
+
+    printf("IP Address:  %s_wifi_event_group\n", ip4addr_ntoa(&ip_info.ip));
+    printf("Subnet mask: %s\n", ip4addr_ntoa(&ip_info.netmask));
+    printf("Gateway:     %s\n", ip4addr_ntoa(&ip_info.gw));
+
+
     NabtoDevice* dev = nabto_device_new();
-    nabto_device_set_log_std_out_callback(dev);
-    nabto_device_set_log_level(dev, "trace");
+
+    struct nn_log logger;
+    esp32_logging_init(dev, &logger);
+
+
+
+
     nabto_device_set_product_id(dev, EXAMPLE_NABTO_PRODUCT);
     printf("Setting nabto product id : %s\n", EXAMPLE_NABTO_PRODUCT);
     nabto_device_set_device_id(dev, EXAMPLE_NABTO_DEVICE);
     printf("Setting nabto device id : %s\n", EXAMPLE_NABTO_DEVICE);
     nabto_device_set_server_url(dev, "a.devices.dev.nabto.net");
+
+    nabto_device_enable_mdns(dev);
 
     size_t keyLength;
     nvs_handle_t handle;
@@ -175,6 +206,8 @@ void app_main(void)
     const char* path[] = {"test", "get", NULL };
 
     nabto_device_coap_init_listener(dev, listener, NABTO_DEVICE_COAP_GET, path);
+    struct device_event_handler eventHandler;
+    device_event_handler_init(&eventHandler, dev);
 
     NabtoDeviceFuture* future = nabto_device_future_new(dev);
 
@@ -209,3 +242,35 @@ void app_main(void)
     esp_restart();
 }
 
+void start_listen(struct device_event_handler* handler)
+{
+    nabto_device_listener_device_event(handler->listener, handler->future, &handler->event);
+    nabto_device_future_set_callback(handler->future, &callback, handler);
+}
+
+void callback(NabtoDeviceFuture* future, NabtoDeviceError ec, void* userData)
+{
+    struct device_event_handler* handler = userData;
+    if (ec != NABTO_DEVICE_EC_OK) {
+        return;
+    }
+    handle_event(handler, handler->event);
+    start_listen(handler);
+}
+
+void handle_event(struct device_event_handler* handler, NabtoDeviceEvent event)
+{
+    if (event == NABTO_DEVICE_EVENT_ATTACHED) {
+        printf("Attached to the basestation\n");
+    } else if (event == NABTO_DEVICE_EVENT_DETACHED) {
+        printf("Detached from the basestation\n");
+    }
+}
+
+void device_event_handler_init(struct device_event_handler* handler, NabtoDevice* device)
+{
+    handler->device = device;
+    handler->listener = nabto_device_listener_new(device);
+    handler->future = nabto_device_future_new(device);
+    nabto_device_device_events_init_listener(device, handler->listener);
+}
