@@ -12,7 +12,6 @@ void device_event_handler_init(struct device_event_handler* handler, NabtoDevice
     handler->listener = nabto_device_listener_new(device);
     handler->future = nabto_device_future_new(device);
     nabto_device_device_events_init_listener(device, handler->listener);
-    start_listen(handler);
 }
 
 void device_event_handler_deinit(struct device_event_handler* handler)

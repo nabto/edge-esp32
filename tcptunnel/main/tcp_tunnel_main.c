@@ -366,7 +366,6 @@ bool handle_main(struct tcp_tunnel* tunnel)
 
     printf("HER1\n");
 
-    /*
     struct iam_config iamConfig;
     iam_config_init(&iamConfig);
 
@@ -374,7 +373,6 @@ bool handle_main(struct tcp_tunnel* tunnel)
         print_iam_config_load_failed("ESP32NVS");
         return false;
     }
-    */
 
     printf("HER2\n");
     
@@ -401,7 +399,7 @@ bool handle_main(struct tcp_tunnel* tunnel)
     nabto_device_set_server_url(device, dc.server);
     nabto_device_enable_mdns(device);
 
-    /*
+
     struct nm_iam iam;
     nm_iam_init(&iam, device, &logger);
 
@@ -416,7 +414,7 @@ bool handle_main(struct tcp_tunnel* tunnel)
     }
 
     nm_iam_enable_client_settings(&iam, dc.clientServerUrl, dc.clientServerKey);
-    */
+
 
 
     nabto_device_add_tcp_tunnel_service(device, "http", "http", "127.0.0.1", 80);
@@ -428,7 +426,6 @@ bool handle_main(struct tcp_tunnel* tunnel)
     char* pairingUrl = generate_pairing_url(dc.productId, dc.deviceId, deviceFingerprint, dc.clientServerUrl, dc.clientServerKey, tcpTunnelState.pairingPassword, tcpTunnelState.pairingServerConnectToken);
 
     // add users to iam module.
-    /*
     struct nm_iam_user* user;
     NN_VECTOR_FOREACH(&user, &tcpTunnelState.users)
     {
@@ -450,7 +447,6 @@ bool handle_main(struct tcp_tunnel* tunnel)
     }
     nn_vector_clear(&iamConfig.policies);
     iam_config_deinit(&iamConfig);
-    */
 
     printf("######## Nabto TCP Tunnel Device ########" NEWLINE);
     printf("# Product ID:        %s" NEWLINE, dc.productId);
@@ -467,20 +463,20 @@ bool handle_main(struct tcp_tunnel* tunnel)
 
 
 
-
+    // Next two are only strings made for printing so free them..
     free(pairingUrl);
     nabto_device_string_free(deviceFingerprint);
 
-    tcp_tunnel_state_deinit(&tcpTunnelState);
+    
 
     struct device_event_handler eventHandler;
     device_event_handler_init(&eventHandler, device);
 
-    //print_iam_state(&iam);
-    //nm_iam_set_user_changed_callback(&iam, iam_user_changed, tunnel);
+    print_iam_state(&iam);
+    nm_iam_set_user_changed_callback(&iam, iam_user_changed, tunnel);
     
     nabto_device_start(device);
-    //nm_iam_start(&iam);
+    nm_iam_start(&iam);
     
     device_ = device;
     
@@ -491,12 +487,14 @@ bool handle_main(struct tcp_tunnel* tunnel)
     printf("VI KOMMER ALDRIG HERTIL MICHAEL\n");
     
     nabto_device_stop(device);
-    
+
+    tcp_tunnel_state_deinit(&tcpTunnelState);
+        
     device_event_handler_deinit(&eventHandler);
     
 
     nabto_device_stop(device);
-    //nm_iam_deinit(&iam);
+    nm_iam_deinit(&iam);
     nabto_device_free(device);
 
 
