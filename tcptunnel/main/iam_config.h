@@ -3,17 +3,8 @@
 
 #include <nn/vector.h>
 
-struct nn_log;
+#include <modules/iam/nm_iam.h>
 
-struct iam_config {
-    struct nn_vector roles;
-    struct nn_vector policies;
-};
-
-void iam_config_init(struct iam_config* iamConfig);
-void iam_config_deinit(struct iam_config* iamConfig);
-
-bool load_iam_config(struct iam_config* iamConfig, struct nn_log* logger);
-
+void load_iam_config(struct nm_iam* iam);
 
 #endif

@@ -14,85 +14,14 @@
 
 static const char* LOGM = "iam_config";
 
-static const char* IAMCONFIG = "iam_config";
-
-static bool create_default_iam_config(const char* iamConfigFile);
-
-void iam_config_init(struct iam_config* iamConfig)
-{
-    nn_vector_init(&iamConfig->roles, sizeof(void*));
-    nn_vector_init(&iamConfig->policies, sizeof(void*));
-}
-
-void iam_config_deinit(struct iam_config* iamConfig)
-{
-    nn_vector_deinit(&iamConfig->roles);
-    nn_vector_deinit(&iamConfig->policies);
-}
-
-bool load_iam_config(struct iam_config* iamConfig, struct nn_log* logger)
-{
-    nvs_handle_t handle;
-    nvs_open("nabto", NVS_READWRITE, &handle);
-    
-    if (!json_config_exists_handle(handle, IAMCONFIG)) {
-        NN_LOG_INFO(logger, LOGM, "IAM configuration nvs key (%s) does not exists creating a new default.", IAMCONFIG);
-        create_default_iam_config(IAMCONFIG);
-    }
-
-    cJSON* config;
-    bool ret = json_config_load_handle(handle, IAMCONFIG, &config, logger);
-    nvs_close(handle);
-    
-    if(!ret) {
-        return false;
-    }
-
-    if (!cJSON_IsObject(config)) {
-        NN_LOG_ERROR(logger, LOGM, "Invalid IAM config format");
-        return false;
-    }
-
-    cJSON* policies = cJSON_GetObjectItem(config, "Policies");
-    cJSON* roles = cJSON_GetObjectItem(config, "Roles");
-
-    if (!cJSON_IsArray(policies) ||
-        !cJSON_IsArray(roles))
-    {
-        NN_LOG_ERROR(logger, LOGM, "missing policies or roles");
-        return false;
-    }
-
-    size_t policiesSize = cJSON_GetArraySize(policies);
-    for (size_t i = 0; i < policiesSize; i++) {
-        cJSON* item = cJSON_GetArrayItem(policies, i);
-        struct nm_policy* policy = nm_policy_from_json(item, logger);
-        if (policy == NULL) {
-            return false;
-        }
-        nn_vector_push_back(&iamConfig->policies, &policy);
-    }
-
-    size_t rolesSize = cJSON_GetArraySize(roles);
-    for(size_t i = 0; i < rolesSize; i++) {
-        cJSON* item = cJSON_GetArrayItem(roles, i);
-        struct nm_iam_role* role = nm_iam_role_from_json(item);
-        if (role == NULL) {
-            return false;
-        }
-        nn_vector_push_back(&iamConfig->roles, &role);
-    }
-    cJSON_Delete(config);
-    return true;
-}
-
-bool create_default_iam_config(const char* iamConfigFile)
+void load_iam_config(struct nm_iam* iam)
 {
     struct nm_policy* passwordPairingPolicy = nm_policy_new("PasswordPairing");
     {
         struct nm_statement* stmt = nm_statement_new(NM_EFFECT_ALLOW);
         nm_statement_add_action(stmt, "Pairing:Get");
         nm_statement_add_action(stmt, "Pairing:Password");
+        nm_statement_add_action(stmt, "Pairing:Local");
         nm_policy_add_statement(passwordPairingPolicy, stmt);
     }
 
@@ -112,19 +41,9 @@ bool create_default_iam_config(const char* iamConfigFile)
         nm_policy_add_statement(pairedPolicy, stmt);
     }
 
-    //struct nm_iam_role* unnairedRole = nm_iam_role_new("Unnaired");
-
-    //nm_iam_role_add_policy(unnairedRole, "PasswordPairing");
-
-
-    cJSON* root = cJSON_CreateObject();
-
-    cJSON* policies = cJSON_CreateArray();
-    cJSON_AddItemToArray(policies, nm_policy_to_json(passwordPairingPolicy));
-    cJSON_AddItemToArray(policies, nm_policy_to_json(tunnelAllPolicy));
-    cJSON_AddItemToArray(policies, nm_policy_to_json(pairedPolicy));
-    cJSON_AddItemToObject(root, "Policies", policies);
-
+    nm_iam_add_policy(iam, passwordPairingPolicy);
+    nm_iam_add_policy(iam, tunnelAllPolicy);
+    nm_iam_add_policy(iam, pairedPolicy);
 
     struct nm_iam_role* unpairedRole = nm_iam_role_new("Unpaired");
     nm_iam_role_add_policy(unpairedRole, "PasswordPairing");
@@ -137,16 +56,8 @@ bool create_default_iam_config(const char* iamConfigFile)
     nm_iam_role_add_policy(userRole, "TunnelAll");
     nm_iam_role_add_policy(userRole, "Paired");
 
-    cJSON* roles = cJSON_CreateArray();
-    cJSON_AddItemToArray(roles, nm_iam_role_to_json(unpairedRole));
-    cJSON_AddItemToArray(roles, nm_iam_role_to_json(adminRole));
-    cJSON_AddItemToArray(roles, nm_iam_role_to_json(userRole));
-    cJSON_AddItemToObject(root, "Roles", roles);
 
-    
-    json_config_save(IAMCONFIG, root);
-    
-    cJSON_Delete(root);
-
-    return true;
+    nm_iam_add_role(iam, unpairedRole);
+    nm_iam_add_role(iam, adminRole);
+    nm_iam_add_role(iam, userRole);
 }

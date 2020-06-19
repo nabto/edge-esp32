@@ -269,8 +269,8 @@ void wifi_init_sta(void)
              EXAMPLE_ESP_WIFI_SSID, EXAMPLE_ESP_WIFI_PASS);
 
 
-    
-    
+
+
 }
 
 
@@ -288,12 +288,12 @@ int app_main(void)
            chip_info.cores,
            (chip_info.features & CHIP_FEATURE_BT) ? "/BT" : "",
            (chip_info.features & CHIP_FEATURE_BLE) ? "/BLE" : "");
-    
+
     printf("silicon revision %d, ", chip_info.revision);
-    
+
     printf("%dMB %s flash\n", spi_flash_get_chip_size() / (1024 * 1024),
            (chip_info.features & CHIP_FEATURE_EMB_FLASH) ? "embedded" : "external");
-    
+
     //Initialize NVS
     esp_err_t ret = nvs_flash_init();
     if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
@@ -301,10 +301,10 @@ int app_main(void)
         ret = nvs_flash_init();
     }
     ESP_ERROR_CHECK(ret);
-    
+
     ESP_LOGI(TAG, "ESP_WIFI_MODE_STA");
     wifi_init_sta();
-    
+
 
     // wait for connection
     printf("Main task: waiting for connection to the wifi network... ");
@@ -348,7 +348,7 @@ bool handle_main(struct tcp_tunnel* tunnel)
     struct nn_log logger;
     logging_init(device, &logger, LOG_LEVEL);
 
-    
+
     printf("HER0.0\n");
     /**
      * Load data files
@@ -357,25 +357,12 @@ bool handle_main(struct tcp_tunnel* tunnel)
     device_config_init(&dc);
 
     printf("HER0.1\n");
-    
+
     if (!load_device_config_esp32(&dc, &logger)) {
         printf("Failed to start device. Could not load device config");
         return false;
     }
 
-
-    printf("HER1\n");
-
-    struct iam_config iamConfig;
-    iam_config_init(&iamConfig);
-
-    if (!load_iam_config(&iamConfig, &logger)) {
-        print_iam_config_load_failed("ESP32NVS");
-        return false;
-    }
-
-    printf("HER2\n");
-    
     struct tcp_tunnel_state tcpTunnelState;
     tcp_tunnel_state_init(&tcpTunnelState);
 
@@ -425,6 +412,9 @@ bool handle_main(struct tcp_tunnel* tunnel)
 
     char* pairingUrl = generate_pairing_url(dc.productId, dc.deviceId, deviceFingerprint, dc.clientServerUrl, dc.clientServerKey, tcpTunnelState.pairingPassword, tcpTunnelState.pairingServerConnectToken);
 
+
+    load_iam_config(&iam);
+
     // add users to iam module.
     struct nm_iam_user* user;
     NN_VECTOR_FOREACH(&user, &tcpTunnelState.users)
@@ -432,21 +422,6 @@ bool handle_main(struct tcp_tunnel* tunnel)
         nm_iam_add_user(&iam, user);
     }
     nn_vector_clear(&tcpTunnelState.users);
-
-    // add roles to iam module
-    struct nm_iam_role* role;
-    NN_VECTOR_FOREACH(&role, &iamConfig.roles) {
-        nm_iam_add_role(&iam, role);
-    }
-    nn_vector_clear(&iamConfig.roles);
-
-    // add policies to iam module
-    struct nm_policy* policy;
-    NN_VECTOR_FOREACH(&policy, &iamConfig.policies) {
-        nm_iam_add_policy(&iam, policy);
-    }
-    nn_vector_clear(&iamConfig.policies);
-    iam_config_deinit(&iamConfig);
 
     printf("######## Nabto TCP Tunnel Device ########" NEWLINE);
     printf("# Product ID:        %s" NEWLINE, dc.productId);
@@ -467,31 +442,31 @@ bool handle_main(struct tcp_tunnel* tunnel)
     free(pairingUrl);
     nabto_device_string_free(deviceFingerprint);
 
-    
+
 
     struct device_event_handler eventHandler;
     device_event_handler_init(&eventHandler, device);
 
     print_iam_state(&iam);
     nm_iam_set_user_changed_callback(&iam, iam_user_changed, tunnel);
-    
+
     nabto_device_start(device);
     nm_iam_start(&iam);
-    
+
     device_ = device;
-    
-    
+
+
     // block until the NABTO_DEVICE_EVENT_CLOSED event is emitted.
     device_event_handler_blocking_listener(&eventHandler);
 
     printf("VI KOMMER ALDRIG HERTIL MICHAEL\n");
-    
+
     nabto_device_stop(device);
 
     tcp_tunnel_state_deinit(&tcpTunnelState);
-        
+
     device_event_handler_deinit(&eventHandler);
-    
+
 
     nabto_device_stop(device);
     nm_iam_deinit(&iam);
@@ -558,5 +533,3 @@ void iam_user_changed(struct nm_iam* iam, const char* id, void* userData)
     save_tcp_tunnel_state(&toWrite);
     tcp_tunnel_state_deinit(&toWrite);
 }
-
-
