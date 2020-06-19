@@ -25,6 +25,22 @@ menu "Nabto 5 example configuration"
 		help
 			Enter the product id - you can get one by signing up to the nabto conole
 
+	config NABTO_SERVER
+		string "Nabto basestation/server hostname" 
+		default "pr-aaaaaaaa.devices.dev.nabto.net"
+		help
+			Enter the hostname of the basestation cluster
 
+	config NABTO_CLIENT_SERVERKEY
+		string "The app's server key to be used" 
+		default "sk-cccccccccccccccccccccccccccccccc"
+		help
+			Enter the app's serverkey
+
+	config NABTO_CLIENT_SERVERURL
+		string "The app's server url to be used" 
+		default "https://pr-aaaaaaaa.clients.dev.nabto.net"
+		help
+			Enter the app's server url to be used
 
 endmenu

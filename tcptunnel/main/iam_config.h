@@ -13,7 +13,7 @@ struct iam_config {
 void iam_config_init(struct iam_config* iamConfig);
 void iam_config_deinit(struct iam_config* iamConfig);
 
-bool load_iam_config(struct iam_config* iamConfig, const char* iamConfigFile, struct nn_log* logger);
+bool load_iam_config(struct iam_config* iamConfig, struct nn_log* logger);
 
 
 #endif

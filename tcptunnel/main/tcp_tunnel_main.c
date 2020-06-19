@@ -5,6 +5,7 @@
 #include "tcp_tunnel_services.h"
 #include "device_event_handler.h"
 
+#include "private_key.h"
 
 #include <nabto/nabto_device.h>
 #include "device_config.h"
@@ -38,7 +39,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#define NEWLINE "/n"
+#define NEWLINE "\n"
 
 #ifdef CONFIG_IDF_TARGET_ESP32
 #define CHIP_NAME "ESP32"
@@ -47,6 +48,7 @@
 #ifdef CONFIG_IDF_TARGET_ESP32S2BETA
 #define CHIP_NAME "ESP32-S2 Beta"
 #endif
+
 
 
 
@@ -61,7 +63,7 @@
 
 #define EXAMPLE_ESP_MAXIMUM_RETRY  10
 
-#define LOG_LEVEL "info"
+#define LOG_LEVEL "trace"
 
 /* FreeRTOS event group to signal when we are connected*/
 static EventGroupHandle_t s_wifi_event_group;
@@ -92,8 +94,6 @@ struct tcp_tunnel {
 
 
 NabtoDevice* device_;
-
-static void signal_handler(int s);
 
 static void print_iam_state(struct nm_iam* iam);
 static void iam_user_changed(struct nm_iam* iam, const char* id, void* userData);
@@ -267,6 +267,10 @@ void wifi_init_sta(void)
     ESP_LOGI(TAG, "wifi_init_sta finished.");
     ESP_LOGI(TAG, "connect to ap SSID:%s password:%s",
              EXAMPLE_ESP_WIFI_SSID, EXAMPLE_ESP_WIFI_PASS);
+
+
+    
+    
 }
 
 
@@ -302,7 +306,21 @@ int app_main(void)
     wifi_init_sta();
     
 
-    
+    // wait for connection
+    printf("Main task: waiting for connection to the wifi network... ");
+    xEventGroupWaitBits(s_wifi_event_group, WIFI_CONNECTED_BIT, false, true, portMAX_DELAY);
+    printf("connected!\n");
+
+    // print the local IP address
+    tcpip_adapter_ip_info_t ip_info;
+    ESP_ERROR_CHECK(tcpip_adapter_get_ip_info(TCPIP_ADAPTER_IF_STA, &ip_info));
+
+    printf("IP Address:  %s_wifi_event_group\n", ip4addr_ntoa(&ip_info.ip));
+    printf("Subnet mask: %s\n", ip4addr_ntoa(&ip_info.netmask));
+    printf("Gateway:     %s\n", ip4addr_ntoa(&ip_info.gw));
+
+
+
     struct tcp_tunnel tunnel;
     tcp_tunnel_init(&tunnel);
 
@@ -310,11 +328,14 @@ int app_main(void)
 
     tcp_tunnel_deinit(&tunnel);
 
+
     if (status) {
         return 0;
     } else {
         return 1;
     }
+    return 1;
+
 }
 
 bool handle_main(struct tcp_tunnel* tunnel)
@@ -322,54 +343,65 @@ bool handle_main(struct tcp_tunnel* tunnel)
 
 
     NabtoDevice* device = nabto_device_new();
+
+    printf("HER0\n");
     struct nn_log logger;
     logging_init(device, &logger, LOG_LEVEL);
 
-
+    
+    printf("HER0.0\n");
     /**
      * Load data files
      */
     struct device_config dc;
     device_config_init(&dc);
 
-    if (!load_device_config(&dc, &logger)) {
+    printf("HER0.1\n");
+    
+    if (!load_device_config_esp32(&dc, &logger)) {
         printf("Failed to start device. Could not load device config");
         return false;
     }
 
+
+    printf("HER1\n");
+
+    /*
     struct iam_config iamConfig;
     iam_config_init(&iamConfig);
 
-    if (!load_iam_config(&iamConfig, tunnel->iamConfigFile, &logger)) {
-        print_iam_config_load_failed(tunnel->iamConfigFile);
+    if (!load_iam_config(&iamConfig, &logger)) {
+        print_iam_config_load_failed("ESP32NVS");
         return false;
     }
+    */
 
+    printf("HER2\n");
+    
     struct tcp_tunnel_state tcpTunnelState;
     tcp_tunnel_state_init(&tcpTunnelState);
 
-    if (!load_tcp_tunnel_state(&tcpTunnelState, tunnel->stateFile, &logger)) {
-        print_tcp_tunnel_state_load_failed(tunnel->stateFile);
+    if (!load_tcp_tunnel_state(&tcpTunnelState, &logger)) {
+        print_tcp_tunnel_state_load_failed("ESP32-NVS storage");
         return false;
     }
 
-    if (!load_tcp_tunnel_services(&tunnel->services, tunnel->servicesFile, &logger))
-    {
-        printf("Failed to load TCP Services from (%s)" NEWLINE, tunnel->servicesFile);
+    printf("HER3\n");
+
+
+    if (!load_or_create_private_key_esp32nvs(device, &logger)) {
+        print_private_key_file_load_failed("ESP32-NVS storage");
         return false;
     }
 
-    if (!load_or_create_private_key(device, tunnel->privateKeyFile, &logger)) {
-        print_private_key_file_load_failed(tunnel->privateKeyFile);
-        return false;
-    }
+    printf("HER4\n");
 
     nabto_device_set_product_id(device, dc.productId);
     nabto_device_set_device_id(device, dc.deviceId);
     nabto_device_set_server_url(device, dc.server);
     nabto_device_enable_mdns(device);
 
-
+    /*
     struct nm_iam iam;
     nm_iam_init(&iam, device, &logger);
 
@@ -384,12 +416,11 @@ bool handle_main(struct tcp_tunnel* tunnel)
     }
 
     nm_iam_enable_client_settings(&iam, dc.clientServerUrl, dc.clientServerKey);
+    */
 
-    struct tcp_tunnel_service* service;
-    NN_VECTOR_FOREACH(&service, &tunnel->services)
-    {
-        nabto_device_add_tcp_tunnel_service(device, service->id, service->type, service->host, service->port);
-    }
+
+    nabto_device_add_tcp_tunnel_service(device, "http", "http", "127.0.0.1", 80);
+
 
     char* deviceFingerprint;
     nabto_device_get_device_fingerprint_full_hex(device, &deviceFingerprint);
@@ -397,6 +428,7 @@ bool handle_main(struct tcp_tunnel* tunnel)
     char* pairingUrl = generate_pairing_url(dc.productId, dc.deviceId, deviceFingerprint, dc.clientServerUrl, dc.clientServerKey, tcpTunnelState.pairingPassword, tcpTunnelState.pairingServerConnectToken);
 
     // add users to iam module.
+    /*
     struct nm_iam_user* user;
     NN_VECTOR_FOREACH(&user, &tcpTunnelState.users)
     {
@@ -418,7 +450,7 @@ bool handle_main(struct tcp_tunnel* tunnel)
     }
     nn_vector_clear(&iamConfig.policies);
     iam_config_deinit(&iamConfig);
-
+    */
 
     printf("######## Nabto TCP Tunnel Device ########" NEWLINE);
     printf("# Product ID:        %s" NEWLINE, dc.productId);
@@ -430,48 +462,41 @@ bool handle_main(struct tcp_tunnel* tunnel)
     printf("# Client Server Key: %s" NEWLINE, dc.clientServerKey);
     printf("# Version:           %s" NEWLINE, nabto_device_version());
     printf("# Pairing URL:       %s" NEWLINE, pairingUrl);
-    printf("######## Configured TCP Services ########" NEWLINE);
-    printf("# "); print_item("Id"); print_item("Type"); print_item("Host"); printf("Port" NEWLINE);
-    struct tcp_tunnel_service* item;
 
-    NN_VECTOR_FOREACH(&item, &tunnel->services)
-    {
-        printf("# "); print_item(item->id); print_item(item->type); print_item(item->host); printf("%d" NEWLINE, item->port);
-    }
-    printf("########" NEWLINE);
+
+
+
+
 
     free(pairingUrl);
     nabto_device_string_free(deviceFingerprint);
 
     tcp_tunnel_state_deinit(&tcpTunnelState);
 
-    if (args->showState) {
-        print_iam_state(&iam);
-    } else {
-        struct device_event_handler eventHandler;
+    struct device_event_handler eventHandler;
+    device_event_handler_init(&eventHandler, device);
 
-        device_event_handler_init(&eventHandler, device);
+    //print_iam_state(&iam);
+    //nm_iam_set_user_changed_callback(&iam, iam_user_changed, tunnel);
+    
+    nabto_device_start(device);
+    //nm_iam_start(&iam);
+    
+    device_ = device;
+    
+    
+    // block until the NABTO_DEVICE_EVENT_CLOSED event is emitted.
+    device_event_handler_blocking_listener(&eventHandler);
 
-        nm_iam_set_user_changed_callback(&iam, iam_user_changed, tunnel);
-
-        nabto_device_start(device);
-        nm_iam_start(&iam);
-
-        device_ = device;
-
-        // Wait for the user to press Ctrl-C
-        signal(SIGINT, &signal_handler);
-
-        // block until the NABTO_DEVICE_EVENT_CLOSED event is emitted.
-        device_event_handler_blocking_listener(&eventHandler);
-
-        nabto_device_stop(device);
-
-        device_event_handler_deinit(&eventHandler);
-    }
+    printf("VI KOMMER ALDRIG HERTIL MICHAEL\n");
+    
+    nabto_device_stop(device);
+    
+    device_event_handler_deinit(&eventHandler);
+    
 
     nabto_device_stop(device);
-    nm_iam_deinit(&iam);
+    //nm_iam_deinit(&iam);
     nabto_device_free(device);
 
 
@@ -480,6 +505,7 @@ bool handle_main(struct tcp_tunnel* tunnel)
     return true;
 }
 
+/*
 void signal_handler(int s)
 {
     NabtoDeviceFuture* fut = nabto_device_future_new(device_);
@@ -487,6 +513,7 @@ void signal_handler(int s)
     nabto_device_future_wait(fut);
     nabto_device_future_free(fut);
 }
+*/
 
 
 void print_iam_state(struct nm_iam* iam)
@@ -530,12 +557,8 @@ void iam_user_changed(struct nm_iam* iam, const char* id, void* userData)
         nn_vector_push_back(&toWrite.users, &user);
     }
     nn_string_set_deinit(&userIds);
-    save_tcp_tunnel_state(tcpTunnel->stateFile, &toWrite);
+    save_tcp_tunnel_state(&toWrite);
     tcp_tunnel_state_deinit(&toWrite);
 }
 
-bool make_directory(const char* directory)
-{
-    mkdir(directory, 0777);
-    return true;
-}
+

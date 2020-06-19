@@ -3,8 +3,8 @@
 #include <modules/iam/nm_iam_to_json.h>
 #include <modules/iam/nm_iam_from_json.h>
 
-#include <apps/common/json_config.h>
-#include <apps/common/random_string.h>
+#include "json_config.h"
+#include "random_string.h"
 
 #include <cjson/cJSON.h>
 #include <nn/log.h>
@@ -15,10 +15,11 @@
 #include <string.h>
 
 static const char* LOGM = "tcp_tunnel_state";
+static const char* STATEKEY = "tunnel_state";
 
 
-static bool write_state_to_file(const char* stateFile, struct tcp_tunnel_state* state);
-static bool create_default_tcp_tunnel_state(const char* stateFile);
+static bool write_state_to_nvs(struct tcp_tunnel_state* state);
+static bool create_default_tcp_tunnel_state();
 
 void tcp_tunnel_state_init(struct tcp_tunnel_state* state)
 {
@@ -34,16 +35,18 @@ void tcp_tunnel_state_deinit(struct tcp_tunnel_state* state)
 }
 
 
-bool load_tcp_tunnel_state(struct tcp_tunnel_state* state, const char* stateFile, struct nn_log* logger)
+bool load_tcp_tunnel_state(struct tcp_tunnel_state* state, struct nn_log* logger)
 {
-    if (!json_config_exists(stateFile)) {
-        NN_LOG_INFO(logger, LOGM, "State file does not exists (%s), creating a new default file", stateFile);
-        create_default_tcp_tunnel_state(stateFile);
+
+    
+    if (!json_config_exists(STATEKEY)) {
+        NN_LOG_INFO(logger, LOGM, "State file does not exists (%s), creating a new default NVS entry", STATEKEY);
+        create_default_tcp_tunnel_state();
     }
 
     cJSON* json;
 
-    if (!json_config_load(stateFile, &json, logger)) {
+    if (!json_config_load(STATEKEY, &json, logger)) {
         return false;
     }
 
@@ -77,7 +80,7 @@ bool load_tcp_tunnel_state(struct tcp_tunnel_state* state, const char* stateFile
 }
 
 
-bool create_default_tcp_tunnel_state(const char* stateFile)
+bool create_default_tcp_tunnel_state()
 {
     struct tcp_tunnel_state state;
     tcp_tunnel_state_init(&state);
@@ -85,15 +88,14 @@ bool create_default_tcp_tunnel_state(const char* stateFile)
     state.pairingServerConnectToken = random_password(20);
 
 
-    bool status = write_state_to_file(stateFile, &state);
-
+    bool status = write_state_to_nvs(&state);
 
     tcp_tunnel_state_deinit(&state);
 
     return status;
 }
 
-bool write_state_to_file(const char* stateFile, struct tcp_tunnel_state* state)
+bool write_state_to_nvs(struct tcp_tunnel_state* state)
 {
     cJSON* json = cJSON_CreateObject();
     cJSON_AddItemToObject(json, "PairingPassword", cJSON_CreateString(state->pairingPassword));
@@ -108,13 +110,14 @@ bool write_state_to_file(const char* stateFile, struct tcp_tunnel_state* state)
         cJSON_AddItemToArray(usersArray, encodedUser);
     }
     cJSON_AddItemToObject(json, "Users", usersArray);
-    json_config_save(stateFile, json);
+
+    json_config_save(STATEKEY, json);
 
     cJSON_Delete(json);
     return true;
 }
 
-bool save_tcp_tunnel_state(const char* stateFile, struct tcp_tunnel_state* state)
+bool save_tcp_tunnel_state(struct tcp_tunnel_state* state)
 {
-    return write_state_to_file(stateFile, state);
+    return write_state_to_nvs(state);
 }

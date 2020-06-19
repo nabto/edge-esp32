@@ -19,6 +19,6 @@ struct tcp_tunnel_service {
 struct tcp_tunnel_service* tcp_tunnel_service_new();
 void tcp_tunnel_service_free(struct tcp_tunnel_service* service);
 
-bool load_tcp_tunnel_services(struct nn_vector* services, const char* servicesFile, struct nn_log* logger);
+bool load_tcp_tunnel_services(struct nn_vector* services, struct nn_log* logger);
 
 #endif

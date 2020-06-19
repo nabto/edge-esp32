@@ -1,6 +1,6 @@
 #include "iam_config.h"
 
-#include <apps/common/json_config.h>
+#include "json_config.h"
 
 #include <modules/policies/nm_policy.h>
 #include <modules/policies/nm_statement.h>
@@ -13,6 +13,8 @@
 #include <stdio.h>
 
 static const char* LOGM = "iam_config";
+
+static const char* IAMCONFIG = "iam_config";
 
 static bool create_default_iam_config(const char* iamConfigFile);
 
@@ -28,15 +30,21 @@ void iam_config_deinit(struct iam_config* iamConfig)
     nn_vector_deinit(&iamConfig->policies);
 }
 
-bool load_iam_config(struct iam_config* iamConfig, const char* iamConfigFile, struct nn_log* logger)
+bool load_iam_config(struct iam_config* iamConfig, struct nn_log* logger)
 {
-    if (!json_config_exists(iamConfigFile)) {
-        NN_LOG_INFO(logger, LOGM, "IAM configuration file (%s) does not exists creating a new default file.", iamConfigFile);
-        create_default_iam_config(iamConfigFile);
+    nvs_handle_t handle;
+    nvs_open("nabto", NVS_READWRITE, &handle);
+    
+    if (!json_config_exists_handle(handle, IAMCONFIG)) {
+        NN_LOG_INFO(logger, LOGM, "IAM configuration nvs key (%s) does not exists creating a new default.", IAMCONFIG);
+        create_default_iam_config(IAMCONFIG);
     }
 
     cJSON* config;
-    if (!json_config_load(iamConfigFile, &config, logger)) {
+    bool ret = json_config_load_handle(handle, IAMCONFIG, &config, logger);
+    nvs_close(handle);
+    
+    if(!ret) {
         return false;
     }
 
@@ -135,8 +143,9 @@ bool create_default_iam_config(const char* iamConfigFile)
     cJSON_AddItemToArray(roles, nm_iam_role_to_json(userRole));
     cJSON_AddItemToObject(root, "Roles", roles);
 
-    json_config_save(iamConfigFile, root);
-
+    
+    json_config_save(IAMCONFIG, root);
+    
     cJSON_Delete(root);
 
     return true;

@@ -1,6 +1,6 @@
 
 
-# nabto5-esp-eye example integraitons
+# nabto5-esp-eye example integrations
 
 This repository includes examples of how to make a nabto edge integration using the esp32
 
