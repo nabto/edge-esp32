@@ -52,13 +52,10 @@ struct np_mdns esp32_mdns_get_impl()
 
 void publish_service(struct np_mdns* obj, uint16_t port, const char* productId, const char* deviceId)
 {
-    printf("register mdns service\n");
-    mdns_service_add(NULL, "_nabto", "_udp", port, NULL, 0);
-
     mdns_txt_item_t serviceTxtData[2] = {
         {"productid",productId},
         {"deviceid",deviceId}
     };
-    //set txt data for service (will free and replace current data)
-    mdns_service_txt_set("_nabto", "_udp", serviceTxtData, 2);
+
+    mdns_service_add(NULL, "_nabto", "_udp", port, serviceTxtData, 2);
 }
