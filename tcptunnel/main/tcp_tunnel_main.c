@@ -2,7 +2,6 @@
 // Nabto includes
 #include "iam_config.h"
 #include "tcp_tunnel_state.h"
-#include "tcp_tunnel_services.h"
 #include "device_event_handler.h"
 
 #include "private_key.h"
@@ -89,7 +88,6 @@ struct args {
 struct tcp_tunnel {
     char* pairingPassword;
     char* pairingServerConnectToken;
-    struct nn_vector services;
 };
 
 
@@ -156,7 +154,6 @@ bool check_log_level(const char* level)
 void tcp_tunnel_init(struct tcp_tunnel* tunnel)
 {
     memset(tunnel, 0, sizeof(struct tcp_tunnel));
-    nn_vector_init(&tunnel->services, sizeof(void*));
 }
 
 void tcp_tunnel_deinit(struct tcp_tunnel* tunnel)
@@ -164,12 +161,6 @@ void tcp_tunnel_deinit(struct tcp_tunnel* tunnel)
 
     free(tunnel->pairingPassword);
     free(tunnel->pairingServerConnectToken);
-    struct tcp_tunnel_service* service;
-    NN_VECTOR_FOREACH(&service, &tunnel->services)
-        {
-        tcp_tunnel_service_free(service);
-    }
-    nn_vector_deinit(&tunnel->services);
 }
 
 char* generate_pairing_url(const char* productId, const char* deviceId, const char* deviceFingerprint,
@@ -344,19 +335,16 @@ bool handle_main(struct tcp_tunnel* tunnel)
 
     NabtoDevice* device = nabto_device_new();
 
-    printf("HER0\n");
     struct nn_log logger;
     logging_init(device, &logger, LOG_LEVEL);
 
 
-    printf("HER0.0\n");
     /**
      * Load data files
      */
     struct device_config dc;
     device_config_init(&dc);
 
-    printf("HER0.1\n");
 
     if (!load_device_config_esp32(&dc, &logger)) {
         printf("Failed to start device. Could not load device config");
@@ -371,15 +359,12 @@ bool handle_main(struct tcp_tunnel* tunnel)
         return false;
     }
 
-    printf("HER3\n");
-
 
     if (!load_or_create_private_key_esp32nvs(device, &logger)) {
         print_private_key_file_load_failed("ESP32-NVS storage");
         return false;
     }
 
-    printf("HER4\n");
 
     nabto_device_set_product_id(device, dc.productId);
     nabto_device_set_device_id(device, dc.deviceId);
@@ -403,15 +388,13 @@ bool handle_main(struct tcp_tunnel* tunnel)
     nm_iam_enable_client_settings(&iam, dc.clientServerUrl, dc.clientServerKey);
 
 
-
+    // Add a tunnel service to localhost port 80 .. ie. make tunnels to the local webserver possible
     nabto_device_add_tcp_tunnel_service(device, "http", "http", "127.0.0.1", 80);
-
 
     char* deviceFingerprint;
     nabto_device_get_device_fingerprint_full_hex(device, &deviceFingerprint);
-
+    
     char* pairingUrl = generate_pairing_url(dc.productId, dc.deviceId, deviceFingerprint, dc.clientServerUrl, dc.clientServerKey, tcpTunnelState.pairingPassword, tcpTunnelState.pairingServerConnectToken);
-
 
     load_iam_config(&iam);
 
@@ -434,15 +417,9 @@ bool handle_main(struct tcp_tunnel* tunnel)
     printf("# Version:           %s" NEWLINE, nabto_device_version());
     printf("# Pairing URL:       %s" NEWLINE, pairingUrl);
 
-
-
-
-
     // Next two are only strings made for printing so free them..
     free(pairingUrl);
     nabto_device_string_free(deviceFingerprint);
-
-
 
     struct device_event_handler eventHandler;
     device_event_handler_init(&eventHandler, device);
@@ -459,7 +436,6 @@ bool handle_main(struct tcp_tunnel* tunnel)
     // block until the NABTO_DEVICE_EVENT_CLOSED event is emitted.
     device_event_handler_blocking_listener(&eventHandler);
 
-    printf("VI KOMMER ALDRIG HERTIL MICHAEL\n");
 
     nabto_device_stop(device);
 
@@ -478,15 +454,6 @@ bool handle_main(struct tcp_tunnel* tunnel)
     return true;
 }
 
-/*
-void signal_handler(int s)
-{
-    NabtoDeviceFuture* fut = nabto_device_future_new(device_);
-    nabto_device_close(device_, fut);
-    nabto_device_future_wait(fut);
-    nabto_device_future_free(fut);
-}
-*/
 
 
 void print_iam_state(struct nm_iam* iam)

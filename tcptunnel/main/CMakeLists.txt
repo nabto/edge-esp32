@@ -16,7 +16,6 @@ idf_component_register(
     json_config.c
     logging.c
     private_key.c
-    tcp_tunnel_services.c
     tcp_tunnel_state.c
     random_string.c
     ${ne_iam_src}
