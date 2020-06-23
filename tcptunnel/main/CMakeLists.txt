@@ -10,6 +10,7 @@ message("nn dir:" ${ne_nn_common_components_include})
 idf_component_register(
   SRCS
     tcp_tunnel_main.c
+    simple_webserver.c
     device_event_handler.c
     device_config.c
     iam_config.c

@@ -9,6 +9,7 @@
 #include <nabto/nabto_device.h>
 #include "device_config.h"
 #include "logging.h"
+#include "simple_webserver.h"
 
 #include <modules/iam/nm_iam.h>
 #include <modules/iam/nm_iam_user.h>
@@ -62,7 +63,8 @@
 
 #define EXAMPLE_ESP_MAXIMUM_RETRY  10
 
-#define LOG_LEVEL "trace"
+//#define LOG_LEVEL "trace"
+#define LOG_LEVEL "info"
 
 /* FreeRTOS event group to signal when we are connected*/
 static EventGroupHandle_t s_wifi_event_group;
@@ -103,25 +105,6 @@ void print_version()
     printf("TCP Tunnel Device Version: %s" NEWLINE, nabto_device_version());
 }
 
-void print_device_config_load_failed(const char* fileName)
-{
-    printf("Could not open or parse the device config file (%s)." NEWLINE, fileName);
-    printf("Please ensure the file exists and has the following format." NEWLINE);
-    printf("{" NEWLINE);
-    printf("  \"ProductId\": \"pr-abcd1234\"," NEWLINE);
-    printf("  \"DeviceId\": \"de-abcd1234\"," NEWLINE);
-    printf("  \"Server\": \"pr-abcd1234.devices.nabto.net or pr-abcd1234.devices.dev.nabto.net or something else.\"," NEWLINE);
-    printf("  \"client\": {" NEWLINE);
-    printf("    \"ServerKey\": \"sk-...\"," NEWLINE);
-    printf("    \"ServerUrl\": \"https://pr-abcd1234.clients.dev.nabto.net or https://pr-abcd1234.clients.nabto.net or something else\"," NEWLINE);
-    printf("  }" NEWLINE);
-    printf("}" NEWLINE);
-}
-
-void print_iam_config_load_failed(const char* fileName)
-{
-    printf("Could not open or parse IAM config file (%s)" NEWLINE, fileName);
-}
 
 void print_tcp_tunnel_state_load_failed(const char* fileName)
 {
@@ -138,17 +121,6 @@ void print_private_key_file_load_failed(const char* fileName)
     printf("Could not load the private key (%s) see error log for further details." NEWLINE, fileName);
 }
 
-bool check_log_level(const char* level)
-{
-    if (strcmp(level, "error") == 0 ||
-        strcmp(level, "warn") == 0 ||
-        strcmp(level, "info") == 0 ||
-        strcmp(level, "trace") == 0)
-    {
-        return true;
-    }
-    return false;
-}
 
 
 void tcp_tunnel_init(struct tcp_tunnel* tunnel)
@@ -333,10 +305,15 @@ bool handle_main(struct tcp_tunnel* tunnel)
 {
 
 
+    
+
     NabtoDevice* device = nabto_device_new();
 
     struct nn_log logger;
     logging_init(device, &logger, LOG_LEVEL);
+
+    // Start the webserver
+    httpd_handle_t webserver = start_webserver(&logger);
 
 
     /**
@@ -353,6 +330,7 @@ bool handle_main(struct tcp_tunnel* tunnel)
 
     struct tcp_tunnel_state tcpTunnelState;
     tcp_tunnel_state_init(&tcpTunnelState);
+
 
     if (!load_tcp_tunnel_state(&tcpTunnelState, &logger)) {
         print_tcp_tunnel_state_load_failed("ESP32-NVS storage");
@@ -443,6 +421,8 @@ bool handle_main(struct tcp_tunnel* tunnel)
 
     device_event_handler_deinit(&eventHandler);
 
+    stop_webserver(webserver);
+    
 
     nabto_device_stop(device);
     nm_iam_deinit(&iam);

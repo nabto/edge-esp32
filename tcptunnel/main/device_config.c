@@ -7,15 +7,12 @@
 #include <string.h>
 #include <stdlib.h>
 
-static const char* LOGM = "device_config";
-
-static const char* DEVICECONFIG = "device_config";
-
+// Simple container for important setup
+// CONFIG_NABTO_* variables are setup in 'idf.py menuconfig'
 
 
 bool load_device_config_esp32(struct device_config* dc, struct nn_log* logger)
 {
-
 
     dc->productId = strdup(CONFIG_NABTO_PRODUCT);
     dc->deviceId = strdup(CONFIG_NABTO_DEVICE);
