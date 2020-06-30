@@ -203,7 +203,7 @@ void app_main(void)
 
     NabtoDeviceListener* listener = nabto_device_listener_new(dev);
 
-    const char* path[] = {"test", "get", NULL };
+    const char* path[] = {"hello-world", NULL };
 
     nabto_device_coap_init_listener(dev, listener, NABTO_DEVICE_COAP_GET, path);
     struct device_event_handler eventHandler;
