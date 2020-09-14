@@ -2,22 +2,20 @@
 
 # nabto5-esp-eye example integrations
 
-This repository includes examples of how to make a nabto edge integration using the esp32
+This repository includes examples of how to make a Nabto Edge integration using the esp32. For a general introduction to Nabto Edge, please see https://docs.nabto.com as well as the [integration guide](https://docs.nabto.com/developer/guides/integration/intro.html).
 
 ## simple 
 
-Is a very very minimal integration example of setting up a nabto edge coap.
-No user authentication is setup in the example
+A minimal integration example of setting up a Nabto Edge CoAP device. No user authentication is setup in the example.
 
 ## tcptunnel
 
-Is an example creating a small webserver which can be reached by nabto tunnel services
-It includes setup/configuration of iam and policy services
+An example creating a small webserver which can be reached by a Nabto Edge Tunnel. It includes setup/configuration of access control through IAM and policies.
 
 ## common
 
-This is NOT an example. This is a common integration "glue" component that glues the Nabto5 into the ESP32 environment. The component is used by all the examples
+Common integration "glue" component that glues the Nabto5 into the ESP32 environment. The component is used by the above examples.
 
 ## nabto-embedded-sdk
 
-This is a git submodule pointing to the nabto embedded sdk sourcecode repository
+This is a git submodule pointing to the Nabto Edge Embedded SDK repo.
