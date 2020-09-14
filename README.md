@@ -1,6 +1,6 @@
 
 
-# nabto5-esp-eye example integrations
+# Nabto Edge ESP32 Integration (BETA)
 
 This repository includes examples of how to make a Nabto Edge integration using the esp32. For a general introduction to Nabto Edge, please see https://docs.nabto.com as well as the [integration guide](https://docs.nabto.com/developer/guides/integration/intro.html).
 
