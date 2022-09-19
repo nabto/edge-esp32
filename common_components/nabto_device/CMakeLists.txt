@@ -38,6 +38,7 @@ idf_component_register(
     ${ne_platform_src}
     ${ne_core_src}
     ${ne_api_src}
+    ${ne_api_future_queue_src}
     ${ne_tinycbor_src}
     ${ne_nn_src}
     ${ne_mbedtls_module_src}
@@ -58,7 +59,7 @@ idf_component_register(
   INCLUDE_DIRS
     ${ne_include_dirs}
   PRIV_INCLUDE_DIRS
-    ${ne_priv_include_dirs}
+    ${ne_priv_include_dirs_no_tls}
     ${ne_nn_common_components_include}
     .
   REQUIRES mbedtls mdns)

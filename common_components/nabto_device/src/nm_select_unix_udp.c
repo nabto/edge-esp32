@@ -62,7 +62,7 @@ static struct np_udp_functions vtable = {
 struct np_udp nm_select_unix_udp_get_impl(struct nm_select_unix* ctx)
 {
     struct np_udp obj;
-    obj.vptr = &vtable;
+    obj.mptr = &vtable;
     obj.data = ctx;
     return obj;
 }

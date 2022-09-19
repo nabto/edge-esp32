@@ -26,7 +26,7 @@ static struct np_dns_functions vtable = {
 struct np_dns esp32_dns_create_impl()
 {
     struct np_dns obj;
-    obj.vptr = &vtable;
+    obj.mptr = &vtable;
     obj.data = NULL;
     return obj;
 }

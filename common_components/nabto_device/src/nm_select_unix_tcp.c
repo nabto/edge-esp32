@@ -48,7 +48,7 @@ static struct np_tcp_functions vtable = {
 struct np_tcp nm_select_unix_tcp_get_impl(struct nm_select_unix* ctx)
 {
     struct np_tcp obj;
-    obj.vptr = &vtable;
+    obj.mptr = &vtable;
     obj.data = ctx;
     return obj;
 }
