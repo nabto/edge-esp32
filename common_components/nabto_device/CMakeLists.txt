@@ -1,8 +1,8 @@
 set(ne_dir ${CMAKE_CURRENT_SOURCE_DIR}/../../nabto-embedded-sdk)
 set(src_dir ${CMAKE_CURRENT_SOURCE_DIR})
 
-include(../../nabto-embedded-sdk/nabto_primary_files.cmake)
-include(../../nabto-embedded-sdk/nabto_modules_files.cmake)
+include(${CMAKE_CURRENT_LIST_DIR}/../../nabto-embedded-sdk/nabto_primary_files.cmake)
+include(${CMAKE_CURRENT_LIST_DIR}/../../nabto-embedded-sdk/nabto_modules_files.cmake)
 
 # Implementation for nabto_device_threads.h
 set(ne_unix_threads ${ne_dir}/src/modules/threads/unix/nabto_device_threads_unix.c)
