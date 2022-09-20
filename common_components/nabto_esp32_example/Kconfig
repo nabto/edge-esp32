@@ -1,0 +1,31 @@
+menu "Nabto example configuration"
+
+    menu "Nabto Edge"
+	    config NABTO_DEVICE_ID
+	    	string "Nabto Device ID"
+	    	default "de-abcdefgh"
+    		help
+	    		Enter the Nabto id - you can get one by signing up to the nabto console
+
+	    config NABTO_PRODUCT_ID
+    		string "Nabto product ID"
+    		default "pr-abcdefgh"
+    		help
+	    		Enter the product id - you can get one by signing up to the nabto conole
+    endmenu
+
+    menu "WiFi"
+        config ESP_WIFI_SSID
+            string "WiFi SSID"
+            default "myssid"
+            help
+                SSID (network name) for the example to connect to.
+
+        config ESP_WIFI_PASSWORD
+            string "WiFi Password"
+            default "mypassword"
+            help
+                WiFi password (WPA or WPA2) for the example to use.
+    endmenu
+
+endmenu

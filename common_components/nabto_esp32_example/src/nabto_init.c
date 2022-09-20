@@ -30,9 +30,9 @@ void nabto_init()
     dev = nabto_device_new();
 
     nabto_device_set_product_id(dev, EXAMPLE_NABTO_PRODUCT_ID);
-    printf("Setting nabto product id : %s\n", EXAMPLE_NABTO_PRODUCT_ID);
+    ESP_LOGI(TAG, "Setting nabto product id : %s", EXAMPLE_NABTO_PRODUCT_ID);
     nabto_device_set_device_id(dev, EXAMPLE_NABTO_DEVICE_ID);
-    printf("Setting nabto device id : %s\n", EXAMPLE_NABTO_DEVICE_ID);
+    ESP_LOGI(TAG, "Setting nabto device id : %s", EXAMPLE_NABTO_DEVICE_ID);
 
     nabto_device_enable_mdns(dev);
 
@@ -72,7 +72,7 @@ void nabto_init()
     char* fingerprint;
     nabto_device_get_device_fingerprint(dev, &fingerprint);
 
-    printf("Started nabto device with fingerprint %s\n", fingerprint);
+    ESP_LOGI(TAG, "Started nabto device with fingerprint %s", fingerprint);
 
     struct device_event_handler eventHandler;
     device_event_handler_init(&eventHandler, dev);
@@ -98,9 +98,9 @@ void callback(NabtoDeviceFuture* future, NabtoDeviceError ec, void* userData)
 void handle_event(struct device_event_handler* handler, NabtoDeviceEvent event)
 {
     if (event == NABTO_DEVICE_EVENT_ATTACHED) {
-        printf("Attached to the basestation\n");
+        ESP_LOGI(TAG, "Attached to the basestation");
     } else if (event == NABTO_DEVICE_EVENT_DETACHED) {
-        printf("Detached from the basestation\n");
+        ESP_LOGI(TAG, "Detached from the basestation");
     }
 }
 

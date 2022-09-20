@@ -1,0 +1,8 @@
+menu "Nabto Edge"
+    config NABTO_DEVICE
+        bool "Enable the nabto device"
+        default  "y"
+        select MBEDTLS_SSL_PROTO_DTLS
+        help
+            "Enable Nabto device"
+endmenu
