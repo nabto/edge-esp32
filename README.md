@@ -17,3 +17,40 @@ Common integration "glue" component that glues the Nabto5 into the ESP32 environ
 ## nabto-embedded-sdk
 
 This is a git submodule pointing to the Nabto Edge Embedded SDK repo.
+
+
+## NVS storage
+
+### Production factory defaults
+
+In a production setup NVS images can be created which contains product_id,
+device_id and a private_key.
+
+The fingerprints can then be obtained outside of the device and uploaded to the
+nabto cloud.
+
+
+## Usage
+
+Clone this repository and use the appropriate component.
+
+git clone --recursive https://github.com/nabto/edge-esp32-beta
+
+in the current esp32 project add the path to the checkout
+
+
+```
+set(EXTRA_COMPONENT_DIRS ../edge-esp32-beta/common_components)
+cmake_minimum_required(VERSION 3.5)
+include($ENV{IDF_PATH}/tools/cmake/project.cmake)
+project(example_with_nabto)
+```
+
+example main CMakeLists.txt
+```
+idf_component_register(
+  SRCS
+    "example.c"
+  REQUIRES
+    nabto_device)
+```

@@ -58,14 +58,11 @@ idf_component_register(
     ${ne_esp32_mdns_src}
   INCLUDE_DIRS
     ${ne_include_dirs}
+    ${ne_nn_include_dirs}
   PRIV_INCLUDE_DIRS
     ${ne_priv_include_dirs_no_tls}
-    ${ne_nn_common_components_include}
-    .
+    include
   REQUIRES mbedtls mdns)
-
-    #${ne_dns_src}
-    #${ne_mdns_src}
 
 target_compile_definitions(${COMPONENT_TARGET} PUBLIC "-DHAVE_ARPA_INET_H")
 
