@@ -18,7 +18,10 @@ static const char *TAG = "nabto";
 
 static NabtoDevice* dev = NULL;
 
+static struct device_event_handler eventHandler;
+
 static void callback(NabtoDeviceFuture* future, NabtoDeviceError ec, void* userData);
+static void start_listen(struct device_event_handler* handler);
 static void handle_event(struct device_event_handler* handler, NabtoDeviceEvent event);
 
 NabtoDevice* nabto_init_get_device() {
@@ -35,6 +38,8 @@ void nabto_init()
     ESP_LOGI(TAG, "Setting nabto device id : %s", EXAMPLE_NABTO_DEVICE_ID);
 
     nabto_device_enable_mdns(dev);
+
+    nabto_device_add_server_connect_token(dev, "demosct");
 
     size_t keyLength;
     nvs_handle_t handle;
@@ -74,8 +79,8 @@ void nabto_init()
 
     ESP_LOGI(TAG, "Started nabto device with fingerprint %s", fingerprint);
 
-    struct device_event_handler eventHandler;
     device_event_handler_init(&eventHandler, dev);
+    start_listen(&eventHandler);
 
 }
 
