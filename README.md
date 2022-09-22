@@ -2,11 +2,11 @@
 
 This repository includes examples of how to make a Nabto Edge integration using the esp32. For a general introduction to Nabto Edge, please see https://docs.nabto.com as well as the [integration guide](https://docs.nabto.com/developer/guides/concepts/integration/intro.html).
 
-## simple
+## examples/simple_coap
 
 A minimal integration example of setting up a Nabto Edge CoAP device. No user authentication is setup in the example.
 
-## tcptunnel
+## examples/tcptunnel
 
 An example creating a small webserver which can be reached by a Nabto Edge Tunnel. It includes setup/configuration of access control through IAM and policies.
 
@@ -27,8 +27,8 @@ In a production setup NVS images can be created which contains product_id,
 device_id and a private_key.
 
 The fingerprints can then be obtained outside of the device and uploaded to the
-nabto cloud.
-
+nabto cloud. Alternatively the privatekey can be generated inside the device and
+the fingerprint then needs to be extracted and uploaded to the nabto cloud.
 
 ## Usage
 

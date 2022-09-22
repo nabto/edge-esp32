@@ -13,8 +13,5 @@ struct device_event_handler {
 
 void device_event_handler_init(struct device_event_handler* handler, NabtoDevice* device);
 
-void device_event_handler_deinit(struct device_event_handler* handler);
-
-void device_event_handler_blocking_listener(struct device_event_handler* handler);
 
 #endif
