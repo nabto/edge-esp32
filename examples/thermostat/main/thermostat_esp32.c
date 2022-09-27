@@ -13,6 +13,10 @@
 #include "thermostat_iam.h"
 #include "device_event_handler.h"
 
+#include "thermostat_state_esp32.h"
+
+#include "nabto_esp32_util.h"
+
 static const char* TAG = "Thermostat";
 
 #define CHECK_NABTO_ERR(err) do { if (err != NABTO_DEVICE_EC_OK) { ESP_LOGE(TAG, "Unexpected error at %s:%d, %s", __FILE__, __LINE__, nabto_device_error_get_message(err) ); esp_restart(); } } while (0)
@@ -46,13 +50,25 @@ void app_main(void)
     CHECK_NABTO_ERR(nabto_device_mdns_add_subtype(dev, "thermostat"));
     CHECK_NABTO_ERR(nabto_device_mdns_add_txt_item(dev, "fn", "thermostat"));
 
+    CHECK_NABTO_ERR(nabto_device_set_app_name(dev, "Thermostat"));
+
+    struct nn_log logger;
+    nabto_esp32_util_nn_log_init(&logger);
+
     struct nabto_esp32_iam iam;
 
-    iam.defaultIamState = thermostat_create_default_iam_state(dev);
-    iam.iamConfiguration = thermostat_create_iam_config();
-    iam.nvsHandle = nvsHandle;
+    struct nm_iam_state* defaultIamState = thermostat_create_default_iam_state(dev);
+    struct nm_iam_configuration* iamConfig = thermostat_create_iam_config();
 
-    nabto_esp32_iam_init(&iam, dev);
+    nabto_esp32_iam_init(&iam, dev, &logger, iamConfig, defaultIamState, nvsHandle);
+
+    struct thermostat_state thermostatState;
+    struct thermostat thermostat;
+    struct thermostat_state_esp32 thermostatStateEsp32;
+
+    thermostat_state_esp32_init(&thermostatStateEsp32, &thermostatState, nvsHandle, &logger);
+
+    thermostat_init(&thermostat, dev, &iam.iam, &thermostatState, &logger);
 
     NabtoDeviceFuture* future = nabto_device_future_new(dev);
     CHECK_NULL(future);

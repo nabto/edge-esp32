@@ -13,18 +13,23 @@ static const char* iamStateNvsKey = "iam_state";
 
 static const char *TAG = "nabto IAM";
 
-
-static void nn_logger_print(void* userData, enum nn_log_severity severity, const char* module, const char* file, int line, const char* fmt, va_list args);
-
 static void state_changed(struct nm_iam* iam, void* userData);
 static bool save_state(struct nabto_esp32_iam* esp32Iam, struct nm_iam_state* state);
 
 static bool load_state(struct nabto_esp32_iam* esp32Iam);
 
-void nabto_esp32_iam_init(struct nabto_esp32_iam* esp32Iam, NabtoDevice* device)
+void nabto_esp32_iam_init(struct nabto_esp32_iam* esp32Iam, NabtoDevice* device, struct nn_log* logger, struct nm_iam_configuration* iamConfiguration, struct nm_iam_state* defaultIamState, nvs_handle_t nvsHandle)
 {
-    nn_log_init(&esp32Iam->logger, nn_logger_print, esp32Iam);
+    memset(esp32Iam, 0, sizeof(struct nabto_esp32_iam));
+    esp32Iam->logger = *logger;
+    esp32Iam->defaultIamState = defaultIamState;
+    esp32Iam->nvsHandle = nvsHandle;
+
     nm_iam_init(&esp32Iam->iam, device, &esp32Iam->logger);
+
+    if (!nm_iam_load_configuration(&esp32Iam->iam, iamConfiguration)) {
+        ESP_LOGE(TAG, "cannot load iam configuration");
+    }
 
     if (load_state(esp32Iam)) {
 
@@ -106,17 +111,4 @@ bool load_state(struct nabto_esp32_iam* esp32Iam)
     }
 
     return true;
-}
-
-static void nn_logger_print(void* userData, enum nn_log_severity severity, const char* module, const char* file, int line, const char* fmt, va_list args)
-{
-    char message[1024];
-    memset(message, 0, sizeof(message));
-    snprintf(message, sizeof(message)-1, fmt, args);
-    switch (severity) {
-        case NN_LOG_SEVERITY_ERROR: ESP_LOGE(module, "%s", message); break;
-        case NN_LOG_SEVERITY_WARN: ESP_LOGW(module, "%s", message); break;
-        case NN_LOG_SEVERITY_INFO: ESP_LOGI(module, "%s", message); break;
-        case NN_LOG_SEVERITY_TRACE: ESP_LOGD(module, "%s", message); break;
-    }
 }

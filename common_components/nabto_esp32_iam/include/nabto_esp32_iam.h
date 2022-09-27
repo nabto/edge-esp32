@@ -12,4 +12,4 @@ struct nabto_esp32_iam {
     nvs_handle_t nvsHandle;
 };
 
-void nabto_esp32_iam_init(struct nabto_esp32_iam* esp32Iam, NabtoDevice* device);
+void nabto_esp32_iam_init(struct nabto_esp32_iam* esp32Iam, NabtoDevice* device, struct nn_log* logger, struct nm_iam_configuration* iamConfiguration, struct nm_iam_state* defaultIamState, nvs_handle_t nvsHandle);

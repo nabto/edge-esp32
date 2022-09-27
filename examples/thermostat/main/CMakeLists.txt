@@ -1,8 +1,19 @@
 idf_component_register(
   SRCS
-    "thermostat.c"
+    "thermostat_esp32.c"
     "thermostat_iam.c"
+    "thermostat_state_esp32.c"
     ${CMAKE_CURRENT_LIST_DIR}/../../../nabto-embedded-sdk/apps/common/random_string.c
+    ${CMAKE_CURRENT_LIST_DIR}/../../../nabto-embedded-sdk/examples/thermostat/src/thermostat.c
+    ${CMAKE_CURRENT_LIST_DIR}/../../../nabto-embedded-sdk/examples/thermostat/src/thermostat_coap_handler.c
+    ${CMAKE_CURRENT_LIST_DIR}/../../../nabto-embedded-sdk/examples/thermostat/src/thermostat_get.c
+    ${CMAKE_CURRENT_LIST_DIR}/../../../nabto-embedded-sdk/examples/thermostat/src/thermostat_set_power.c
+    ${CMAKE_CURRENT_LIST_DIR}/../../../nabto-embedded-sdk/examples/thermostat/src/thermostat_set_mode.c
+    ${CMAKE_CURRENT_LIST_DIR}/../../../nabto-embedded-sdk/examples/thermostat/src/thermostat_set_target.c
+    ${CMAKE_CURRENT_LIST_DIR}/../../../nabto-embedded-sdk/examples/thermostat/src/thermostat_state_data.c
+    ${CMAKE_CURRENT_LIST_DIR}/../../../nabto-embedded-sdk/examples/thermostat/src/thermostat_state.c
+  INCLUDE_DIRS
+    ${CMAKE_CURRENT_LIST_DIR}/../../../nabto-embedded-sdk/examples/thermostat/src
   REQUIRES
-    nabto_esp32_example nabto_esp32_iam
+    nabto_esp32_example nabto_esp32_iam nabto_esp32_util
 )
