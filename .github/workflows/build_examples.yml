@@ -17,4 +17,4 @@ jobs:
         submodules: 'recursive'
         fetch-depth: 0
     - name: esp-idf build
-      run: docker run --rm -t -v "${GITHUB_WORKSPACE}:/app" -w "/app/examples/simple" esspressif/esp-idf:release-v5.0 idf.py build
+      run: docker run --rm -t -v "${GITHUB_WORKSPACE}:/app" -w "/app/examples/simple" espressif/idf:release-v5.0 idf.py build
