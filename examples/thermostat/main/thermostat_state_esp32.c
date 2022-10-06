@@ -1,4 +1,5 @@
 #include "thermostat_state_esp32.h"
+#include "thermostat_led.h"
 
 #include "esp_log.h"
 
@@ -40,6 +41,8 @@ void thermostat_state_esp32_init(struct thermostat_state_esp32* tse, struct ther
     thermostatState->set_mode = set_mode;
 
     thermostat_state_esp32_load_data(tse, logger);
+    thermostat_led_init();
+    thermostat_led_update(&tse->stateData);
 }
 
 void thermostat_state_file_backend_deinit(struct thermostat_state_esp32* fileBackend)
@@ -125,6 +128,7 @@ enum thermostat_mode get_mode(void* impl)
 
 void save_state(struct thermostat_state_esp32* tse)
 {
+    thermostat_led_update(&tse->stateData);
     cJSON* j = NULL;
     char* buffer = NULL;
     esp_err_t nvsStatus = ESP_FAIL;

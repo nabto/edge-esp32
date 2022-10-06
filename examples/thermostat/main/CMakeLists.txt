@@ -3,6 +3,7 @@ idf_component_register(
     "thermostat_esp32.c"
     "thermostat_iam.c"
     "thermostat_state_esp32.c"
+    "thermostat_led.c"
     ${CMAKE_CURRENT_LIST_DIR}/../../../nabto-embedded-sdk/apps/common/random_string.c
     ${CMAKE_CURRENT_LIST_DIR}/../../../nabto-embedded-sdk/examples/thermostat/src/thermostat.c
     ${CMAKE_CURRENT_LIST_DIR}/../../../nabto-embedded-sdk/examples/thermostat/src/thermostat_coap_handler.c
@@ -15,5 +16,5 @@ idf_component_register(
   INCLUDE_DIRS
     ${CMAKE_CURRENT_LIST_DIR}/../../../nabto-embedded-sdk/examples/thermostat/src
   REQUIRES
-    nabto_esp32_example nabto_esp32_iam nabto_esp32_util
+    nabto_esp32_example nabto_esp32_iam nabto_esp32_util driver
 )
