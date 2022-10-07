@@ -7,20 +7,16 @@ on:
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
-    container: espressif/idf:release-v5.0
-    defaults:
-      run:
-        shell: bash
-
     steps:
-      - name: get info
-        run: ls -la /opt/esp/idf/tools/idf.py
       - name: Checkout repo
         uses: actions/checkout@v2
         with:
           submodules: 'recursive'
           fetch-depth: 0
       - name: esp-idf build
-        run: cd examples/thermostat && idf.py build
+        uses: espressif/esp-idf-ci-action@v1
+        with:
+          esp_idf_version: v5.0
+          target: esp32
+          path: 'examples/thermostat'
