@@ -8,16 +8,16 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    container: espressif/idf:release-v5.0
     steps:
       - name: Checkout repo
         uses: actions/checkout@v2
         with:
           submodules: 'recursive'
           fetch-depth: 0
+
       - name: esp-idf build
-        uses: espressif/esp-idf-ci-action@v1
-        with:
-          esp_idf_version: release-v5.0
-          target: esp32
-          path: 'examples/thermostat'
-          command: git config --global --add safe.directory /app/nabto-embedded-sdk && idf.py build
+        run: |
+          git config --global --add safe.directory .
+          . $IDF_PATH/export.sh
+          cd examples/thermostat && idf.py build
