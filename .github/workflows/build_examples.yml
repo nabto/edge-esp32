@@ -10,6 +10,9 @@ jobs:
 
     runs-on: ubuntu-latest
     container: espressif/idf:release-v5.0
+    defaults:
+      run:
+        shell: bash
 
     steps:
     - name: Checkout repo
