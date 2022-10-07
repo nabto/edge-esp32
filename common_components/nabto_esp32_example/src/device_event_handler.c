@@ -29,6 +29,11 @@ void handle_event(struct device_event_handler* handler, NabtoDeviceEvent event)
         ESP_LOGI(TAG, "Attached to the basestation");
     } else if (event == NABTO_DEVICE_EVENT_DETACHED) {
         ESP_LOGI(TAG, "Detached from the basestation");
+    } else if (event == NABTO_DEVICE_EVENT_UNKNOWN_FINGERPRINT) {
+        char* fingerprint;
+        nabto_device_get_device_fingerprint(handler->device, &fingerprint);
+        ESP_LOGI(TAG, "The fingerprint %s is not known by the Nabto Edge Cloud. fix it on https://console.cloud.nabto.com", fingerprint);
+        nabto_device_string_free(fingerprint);
     }
 }
 
