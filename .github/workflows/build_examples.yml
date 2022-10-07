@@ -15,12 +15,12 @@ jobs:
         shell: bash
 
     steps:
+    - name: get info
+      run: which idf.py
     - name: Checkout repo
       uses: actions/checkout@v2
       with:
         submodules: 'recursive'
         fetch-depth: 0
-    - name: get info
-      run: which idf.py
     - name: esp-idf build
       run: cd examples/thermostat && idf.py build
