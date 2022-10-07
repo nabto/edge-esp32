@@ -9,6 +9,8 @@ jobs:
   build:
 
     runs-on: ubuntu-latest
+    container:
+      image: espressif/idf:release-v5.0
 
     steps:
     - name: Checkout repo
@@ -17,4 +19,4 @@ jobs:
         submodules: 'recursive'
         fetch-depth: 0
     - name: esp-idf build
-      run: docker run --user="$(id --user):$(id --group)" --rm -t -v "${GITHUB_WORKSPACE}:/app" -w "/app/examples/simple" espressif/idf:release-v5.0 idf.py build
+      run: cd examples/thermostat && idf.py build
