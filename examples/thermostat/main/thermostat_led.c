@@ -2,7 +2,7 @@
 
 #include "driver/gpio.h"
 
-#define EXAMPLE_POWER_PIN 22
+#define EXAMPLE_POWER_PIN CONFIG_NABTO_THERMOSTAT_POWER_LED
 
 void thermostat_led_init()
 {
