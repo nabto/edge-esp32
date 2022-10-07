@@ -16,7 +16,7 @@ jobs:
 
     steps:
       - name: get info
-        run: which idf.py
+        run: ls -la /opt/esp/idf/tools/idf.py
       - name: Checkout repo
         uses: actions/checkout@v2
         with:
