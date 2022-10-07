@@ -20,3 +20,4 @@ jobs:
           esp_idf_version: release-v5.0
           target: esp32
           path: 'examples/thermostat'
+          command: git config --global --add safe.directory /app/nabto-embedded-sdk && idf.py build
