@@ -1,18 +1,16 @@
-menu "Nabto example configuration"
+menu "Nabto Example"
 
-    menu "Nabto Edge"
-	    config NABTO_DEVICE_ID
-	    	string "Nabto Device ID"
-	    	default "de-abcdefgh"
-    		help
-	    		Enter the Nabto id - you can get one by signing up to the nabto console
+    config NABTO_DEVICE_ID
+    	string "Nabto Device ID"
+    	default "de-abcdefgh"
+   		help
+    		Enter the Nabto id - you can get one by signing up to the nabto console
 
-	    config NABTO_PRODUCT_ID
-    		string "Nabto product ID"
-    		default "pr-abcdefgh"
-    		help
-	    		Enter the product id - you can get one by signing up to the nabto conole
-    endmenu
+    config NABTO_PRODUCT_ID
+   		string "Nabto product ID"
+   		default "pr-abcdefgh"
+   		help
+    		Enter the product id - you can get one by signing up to the nabto conole
 
     menu "WiFi"
         config ESP_WIFI_SSID
