@@ -1,6 +1,3 @@
-[submodule "components/nabto-embedded-sdk"]
-	path = components/nabto-embedded-sdk
-	url = git@github.com:nabto/nabto-embedded-sdk
 [submodule "nabto-embedded-sdk"]
 	path = nabto-embedded-sdk
-	url = git@github.com:nabto/nabto-embedded-sdk
+	url = https://github.com/nabto/nabto-embedded-sdk
