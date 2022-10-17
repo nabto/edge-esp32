@@ -9,6 +9,8 @@
 
 #include "nn/log.h"
 
+#include "nabto_esp32_util.h"
+
 static const char* iamStateNvsKey = "iam_state";
 
 static const char *TAG = "nabto IAM";
@@ -18,12 +20,13 @@ static bool save_state(struct nabto_esp32_iam* esp32Iam, struct nm_iam_state* st
 
 static bool load_state(struct nabto_esp32_iam* esp32Iam);
 
-void nabto_esp32_iam_init(struct nabto_esp32_iam* esp32Iam, NabtoDevice* device, struct nn_log* logger, struct nm_iam_configuration* iamConfiguration, struct nm_iam_state* defaultIamState, nvs_handle_t nvsHandle)
+void nabto_esp32_iam_init(struct nabto_esp32_iam* esp32Iam, NabtoDevice* device, struct nm_iam_configuration* iamConfiguration, struct nm_iam_state* defaultIamState, nvs_handle_t nvsHandle)
 {
     memset(esp32Iam, 0, sizeof(struct nabto_esp32_iam));
-    esp32Iam->logger = *logger;
     esp32Iam->defaultIamState = defaultIamState;
     esp32Iam->nvsHandle = nvsHandle;
+
+    nabto_esp32_util_nn_log_init(&esp32Iam->logger);
 
     nm_iam_init(&esp32Iam->iam, device, &esp32Iam->logger);
 

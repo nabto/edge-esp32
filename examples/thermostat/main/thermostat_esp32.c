@@ -12,6 +12,7 @@
 #include "nabto_esp32_iam.h"
 #include "thermostat_iam.h"
 #include "device_event_handler.h"
+#include "connection_event_handler.h"
 
 #include "thermostat_state_esp32.h"
 
@@ -60,7 +61,7 @@ void app_main(void)
     struct nm_iam_state* defaultIamState = thermostat_create_default_iam_state(dev);
     struct nm_iam_configuration* iamConfig = thermostat_create_iam_config();
 
-    nabto_esp32_iam_init(&iam, dev, &logger, iamConfig, defaultIamState, nvsHandle);
+    nabto_esp32_iam_init(&iam, dev, iamConfig, defaultIamState, nvsHandle);
 
     struct thermostat_state thermostatState;
     struct thermostat thermostat;
@@ -86,8 +87,9 @@ void app_main(void)
     struct device_event_handler eh;
     device_event_handler_init(&eh, dev);
 
+    struct connection_event_handler ceh;
+    connection_event_handler_init(&ceh, dev);
 
-    ESP_LOGI(TAG, "Waiting forever\n");
     for (int i = 0;; i++) {
         vTaskDelay(1000 / portTICK_PERIOD_MS);
         fflush(stdout);
