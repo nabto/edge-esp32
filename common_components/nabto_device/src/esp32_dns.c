@@ -81,6 +81,10 @@ void esp32_async_resolve(u8_t family, const char* host, struct np_ip_address* ip
     NABTO_LOG_TRACE(LOG, "esp_async_resolve:%s", host);
 
     struct nm_dns_resolve_event* event = calloc(1,sizeof(struct nm_dns_resolve_event));
+    if (event == NULL) {
+        np_completion_event_resolve(completionEvent, NABTO_EC_OUT_OF_MEMORY);
+        return;
+    }
     event->host = host;
     event->ips = ips;
     event->ipsSize = ipsSize;

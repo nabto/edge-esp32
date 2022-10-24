@@ -49,6 +49,9 @@ np_error_code nabto_device_platform_init(struct nabto_device_context* device, st
     printf("Hi from 'nabto_device_init_platform'\n");
 
     struct select_unix_platform* platform = calloc(1, sizeof(struct select_unix_platform));
+    if (platform == NULL) {
+        return NABTO_EC_OUT_OF_MEMORY;
+    }
 
     nabto_device_integration_set_platform_data(device, platform);
 
