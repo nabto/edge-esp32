@@ -9,6 +9,8 @@
 #include "nabto_esp32_example.h"
 #include "hello_world_coap_handler.h"
 #include "device_event_handler.h"
+#include "connection_event_handler.h"
+
 
 #include <nabto/nabto_device.h>
 #include <nn/log.h>
@@ -49,6 +51,9 @@ void app_main(void)
 
     struct device_event_handler eventHandler;
     device_event_handler_init(&eventHandler, dev);
+
+    struct connection_event_handler connectionEventHandler;
+    connection_event_handler_init(&connectionEventHandler, dev);
 
     NabtoDeviceFuture* future = nabto_device_future_new(dev);
     CHECK_NULL(future);

@@ -24,9 +24,9 @@ idf_component_register(
   INCLUDE_DIRS
     ../../nabto-embedded-sdk/src
     ../../nabto-embedded-sdk/3rdparty/cjson
-    ../../common_components/nabto_device/src    
+    ../../components/nabto_device/src
     ${ne_include_dirs}
-    ${ne_nn_common_components_include}    
+    ${ne_nn_common_components_include}
     ${ne_priv_include_dirs}
 )
 

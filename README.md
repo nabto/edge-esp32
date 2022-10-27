@@ -43,6 +43,52 @@ The thermostat example can be tested using either the IOS or Android app.
 Android: https://play.google.com/store/apps/details?id=com.nabto.edge.thermostatdemo
 IOS: https://apps.apple.com/us/app/nabto-edge-thermostat/id1643535407
 
+## examples/simple_coap
+
+This example is the ESP32 equivalent of the simple_coap example found at
+`https://github.com/nabto/nabto-embedded-sdk/tree/master/examples/simple_coap`.
+This is a simple example showing how to start a device which attaches to the
+basestation and creates a simple CoAP endpoint which returns "HelloWorld" the
+demo does not use any IAM(Identity and Access Management) etc.
+
+To use this example first configure the example in `Component Config -> Nabto
+Example` set the wifi name, password and the Nabto product id and device id.
+Refer to the examples/thermostat section for how to obtain these id's and how to
+configure the fingerprint.
+
+When the example is running use the `simple_coap_client`
+(https://github.com/nabto/nabto-client-sdk-examples) executable to test the
+example. A simple Android or IOS client can also be created.
+
+
+## Usage In Own Projects
+
+For using the Nabto Edge For ESP32 in your own project the following approach
+can be used.
+
+Clone this repository and use the nabto_device component.
+
+git clone --recursive https://github.com/nabto/edge-esp32-beta
+
+in the current esp32 project add the path to the checkout
+
+
+```
+set(EXTRA_COMPONENT_DIRS ../edge-esp32-beta/components)
+cmake_minimum_required(VERSION 3.5)
+include($ENV{IDF_PATH}/tools/cmake/project.cmake)
+project(example_with_nabto)
+```
+
+example main CMakeLists.txt
+```
+idf_component_register(
+  SRCS
+    "example.c"
+  REQUIRES
+    nabto_device)
+```
+
 
 ## Flash and memory usage by nabto.
 
@@ -173,10 +219,6 @@ Memory usage:
 
 The below sections are work in progress and is not meant to be followed yet.
 
-## examples/simple_coap
-
-A minimal integration example of setting up a Nabto Edge CoAP device. No user authentication is setup in the example.
-
 ## examples/tcptunnel
 
 An example creating a small webserver which can be reached by a Nabto Edge Tunnel. It includes setup/configuration of access control through IAM and policies.
@@ -211,7 +253,7 @@ in the current esp32 project add the path to the checkout
 
 
 ```
-set(EXTRA_COMPONENT_DIRS ../edge-esp32-beta/common_components)
+set(EXTRA_COMPONENT_DIRS ../edge-esp32-beta/components)
 cmake_minimum_required(VERSION 3.5)
 include($ENV{IDF_PATH}/tools/cmake/project.cmake)
 project(example_with_nabto)

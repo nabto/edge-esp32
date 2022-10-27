@@ -1,4 +1,7 @@
 #include "hello_world_coap_handler.h"
+#include "esp_log.h"
+
+static const char* LOGM = "coap_handler";
 
 static void callback(NabtoDeviceFuture* future, NabtoDeviceError ec, void* userData);
 static void start_listen(struct hello_world_coap_handler* handler);
@@ -26,6 +29,7 @@ void callback(NabtoDeviceFuture* future, NabtoDeviceError ec, void* userData)
         nabto_device_coap_response_set_content_format(handler->request, NABTO_DEVICE_COAP_CONTENT_FORMAT_TEXT_PLAIN_UTF8);
         nabto_device_coap_response_ready(handler->request);
         nabto_device_coap_request_free(handler->request);
+        ESP_LOGI(LOGM, "Sent HelloWorld CoAP response back to the client");
 
         start_listen(handler);
     }
