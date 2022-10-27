@@ -16,8 +16,20 @@ jobs:
           submodules: 'recursive'
           fetch-depth: 0
 
-      - name: esp-idf build
+      - name: thermostat build
         run: |
           git config --global --add safe.directory .
           . $IDF_PATH/export.sh
           cd examples/thermostat && idf.py build
+
+      - name: simple coap build
+        run: |
+          git config --global --add safe.directory .
+          . $IDF_PATH/export.sh
+          cd examples/simple_coap && idf.py build
+
+      - name: tcp tunnel build
+        run: |
+          git config --global --add safe.directory .
+          . $IDF_PATH/export.sh
+          cd examples/tcptunnel && idf.py build
