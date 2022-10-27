@@ -216,7 +216,8 @@ Heap summary for capabilities 0x00000004:
 ### Nabto Edge Thermostat Example Resource Usage Summary
 
 Flash usage: `926669 bytes - 615825 bytes = 310844 bytes`
-Memory usage:
+
+RAM usage:
   * Just attached: ~100kB
   * Per connection: ~24kB
 
