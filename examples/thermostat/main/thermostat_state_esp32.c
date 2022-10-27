@@ -126,8 +126,18 @@ enum thermostat_mode get_mode(void* impl)
 
 }
 
+const char* power_as_string(bool power)
+{
+    if (power) {
+        return "ON";
+    } else {
+        return "OFF";
+    }
+}
+
 void save_state(struct thermostat_state_esp32* tse)
 {
+    ESP_LOGI(TAG, "Thermostat state updated: Target temperature %.2f, Mode: %s, Power: %s, ", tse->stateData.target, thermostat_state_mode_as_string(tse->stateData.mode), power_as_string(tse->stateData.power));
     thermostat_led_update(&tse->stateData);
     cJSON* j = NULL;
     char* buffer = NULL;

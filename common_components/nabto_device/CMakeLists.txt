@@ -20,6 +20,7 @@ set(ne_select_esp32_src
   ${ne_esp32_dir}/nm_select_unix_tcp.c
   ${ne_esp32_dir}/platform_modules_esp32.c
   ${ne_esp32_dir}/esp32_logging.c
+  ${ne_esp32_dir}/esp32_event_queue.c
 )
 
 set(ne_esp32_dns_src
@@ -62,9 +63,9 @@ idf_component_register(
   PRIV_INCLUDE_DIRS
     ${ne_priv_include_dirs_no_tls}
     include
-  REQUIRES mbedtls mdns)
+  REQUIRES mbedtls pthread mdns)
 
-target_compile_definitions(${COMPONENT_TARGET} PUBLIC "-DHAVE_ARPA_INET_H")
+target_compile_definitions(${COMPONENT_TARGET} PUBLIC "-DHAVE_ARPA_INET_H -DNABTO_DEVICE_DTLS_CLIENT_ONLY")
 
 add_custom_target(GENERATE_NABTO_VERSION ALL
   WORKING_DIRECTORY ${ne_dir}/src/core

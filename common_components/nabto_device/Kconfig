@@ -1,8 +1,27 @@
 menu "Nabto Edge"
-    config NABTO_DEVICE
+    config ENABLE_NABTO_DEVICE
         bool "Enable the nabto device"
         default  "y"
         select MBEDTLS_SSL_PROTO_DTLS
         help
             "Enable Nabto device"
+    config NABTO_DEVICE_FUTURE_QUEUE_THREAD_STACK_SIZE
+        int "Nabto Future Queue Thread Stack Size"
+        default 1024
+        depends on ENABLE_NABTO_DEVICE
+        help
+            "set the stack size of the thread which resolves callbacks set by nabto_device_future_set_callback"
+    config NABTO_DEVICE_EVENT_QUEUE_THREAD_STACK_SIZE
+        int "Nabto Event Queue Thread Stack Size"
+        default 8192
+        depends on ENABLE_NABTO_DEVICE
+        help
+            "Set the stack size for the thread which runs all the core operations."
+    config NABTO_DEVICE_NETWORK_THREAD_STACK_SIZE
+        int "Nabto Network Thread Stack Size"
+        default 2048
+        depends on ENABLE_NABTO_DEVICE
+        help
+            "Set the stack size for the thread which runs the network."
+
 endmenu

@@ -104,6 +104,9 @@ np_error_code create(struct np_tcp* obj, struct np_tcp_socket** sock)
 {
     struct nm_select_unix* selectCtx = obj->data;
     struct np_tcp_socket* s = calloc(1,sizeof(struct np_tcp_socket));
+    if (s == NULL) {
+        return NABTO_EC_OUT_OF_MEMORY;
+    }
     s->fd = -1;
     *sock = s;
     s->selectCtx = selectCtx;

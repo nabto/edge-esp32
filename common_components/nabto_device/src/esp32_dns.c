@@ -58,17 +58,22 @@ void esp32_dns_resolve_cb(const char* name, const ip_addr_t* ipaddr, void* userD
         return;
 
     } else {
-        if(event->family == LWIP_DNS_ADDRTYPE_IPV4) {
-            NABTO_LOG_TRACE(LOG, "esp_async_resolve callback - found: %s",ipaddr_ntoa(ipaddr));
+        NABTO_LOG_TRACE(LOG, "esp_async_resolve callback - found: %s",ipaddr_ntoa(ipaddr));
+        if(ipaddr->type == IPADDR_TYPE_V4) {
             memcpy(ips[0].ip.v4, &ipaddr->u_addr.ip4.addr, 4);
+            ips[0].type = NABTO_IPV4;
             *event->ipsResolved = 1;
-            free(event);
-            np_completion_event_resolve(completionEvent, NABTO_EC_OK);
-            return;
+        } else if (ipaddr->type == IPADDR_TYPE_V6) {
+            memcpy(ips[0].ip.v6, &ipaddr->u_addr.ip6.addr, 16);
+            ips[0].type = NABTO_IPV6;
+            *event->ipsResolved = 1;
         }
+        free(event);
+        np_completion_event_resolve(completionEvent, NABTO_EC_OK);
+        return;
     }
-    free(event);
     *event->ipsResolved = 0;
+    free(event);
     np_completion_event_resolve(completionEvent, NABTO_EC_UNKNOWN);
 
 }
@@ -81,6 +86,10 @@ void esp32_async_resolve(u8_t family, const char* host, struct np_ip_address* ip
     NABTO_LOG_TRACE(LOG, "esp_async_resolve:%s", host);
 
     struct nm_dns_resolve_event* event = calloc(1,sizeof(struct nm_dns_resolve_event));
+    if (event == NULL) {
+        np_completion_event_resolve(completionEvent, NABTO_EC_OUT_OF_MEMORY);
+        return;
+    }
     event->host = host;
     event->ips = ips;
     event->ipsSize = ipsSize;
@@ -89,14 +98,19 @@ void esp32_async_resolve(u8_t family, const char* host, struct np_ip_address* ip
     event->family = family;
 
     ip_addr_t addr;
-    err_t status = dns_gethostbyname(host, &addr, esp32_dns_resolve_cb, event);
+    err_t status = dns_gethostbyname_addrtype(host, &addr, esp32_dns_resolve_cb, event, family);
     if (status == ERR_OK) {
         *ipsResolved = 0;
         free(event);
 
         // callback is not going to be called.
-        if(family == LWIP_DNS_ADDRTYPE_IPV4) {
+        if(addr.type == IPADDR_TYPE_V4) {
             memcpy(ips[0].ip.v4, &addr.u_addr.ip4.addr, 4);
+            ips[0].type = NABTO_IPV4;
+            *ipsResolved = 1;
+        } else if (addr.type == IPADDR_TYPE_V6) {
+            memcpy(ips[0].ip.v6, &addr.u_addr.ip6.addr, 16);
+            ips[0].type = NABTO_IPV6;
             *ipsResolved = 1;
         }
         np_completion_event_resolve(completionEvent, NABTO_EC_OK);

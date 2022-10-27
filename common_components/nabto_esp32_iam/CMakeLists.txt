@@ -15,5 +15,5 @@ idf_component_register(
     ${CMAKE_CURRENT_LIST_DIR}/../../nabto-embedded-sdk
     include
   REQUIRES
-    nabto_device nvs_flash
+    nabto_device nvs_flash nabto_esp32_util
 )

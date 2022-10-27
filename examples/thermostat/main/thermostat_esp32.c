@@ -12,6 +12,7 @@
 #include "nabto_esp32_iam.h"
 #include "thermostat_iam.h"
 #include "device_event_handler.h"
+#include "connection_event_handler.h"
 
 #include "thermostat_state_esp32.h"
 
@@ -21,6 +22,26 @@ static const char* TAG = "Thermostat";
 
 #define CHECK_NABTO_ERR(err) do { if (err != NABTO_DEVICE_EC_OK) { ESP_LOGE(TAG, "Unexpected error at %s:%d, %s", __FILE__, __LINE__, nabto_device_error_get_message(err) ); esp_restart(); } } while (0)
 #define CHECK_NULL(ptr) do { if (ptr == NULL) { ESP_LOGE(TAG, "Unexpected out of memory at %s:%d", __FILE__, __LINE__); esp_restart(); } } while (0)
+
+struct use_all_memory_item {
+    struct nn_llist_node node;
+    uint8_t buffer[1024];
+};
+
+static const char* LOGM = "nabto";
+void logCallback(NabtoDeviceLogMessage* msg, void* data)
+{
+    if (msg->severity == NABTO_DEVICE_LOG_ERROR) {
+        ESP_LOGE(LOGM, "%s", msg->message);
+    } else if (msg->severity == NABTO_DEVICE_LOG_WARN) {
+        ESP_LOGW(LOGM, "%s", msg->message);
+    } else if (msg->severity == NABTO_DEVICE_LOG_INFO) {
+        ESP_LOGI(LOGM, "%s", msg->message);
+    } else if (msg->severity == NABTO_DEVICE_LOG_TRACE) {
+        ESP_LOGV(LOGM, "%s", msg->message);
+    }
+}
+
 
 void app_main(void)
 {
@@ -42,6 +63,11 @@ void app_main(void)
     NabtoDevice* dev = nabto_device_new();
     CHECK_NULL(dev);
 
+    nabto_device_set_log_callback(dev, logCallback, NULL);
+    CHECK_NABTO_ERR(nabto_device_set_log_level(dev, "trace"));
+
+    //nabto_device_set_basestation_attach(dev, false);
+
     nabto_esp32_example_load_private_key(dev, nvsHandle);
 
     CHECK_NABTO_ERR(nabto_esp32_example_set_ids(dev));
@@ -60,7 +86,7 @@ void app_main(void)
     struct nm_iam_state* defaultIamState = thermostat_create_default_iam_state(dev);
     struct nm_iam_configuration* iamConfig = thermostat_create_iam_config();
 
-    nabto_esp32_iam_init(&iam, dev, &logger, iamConfig, defaultIamState, nvsHandle);
+    nabto_esp32_iam_init(&iam, dev, iamConfig, defaultIamState, nvsHandle);
 
     struct thermostat_state thermostatState;
     struct thermostat thermostat;
@@ -86,10 +112,12 @@ void app_main(void)
     struct device_event_handler eh;
     device_event_handler_init(&eh, dev);
 
+    struct connection_event_handler ceh;
+    connection_event_handler_init(&ceh, dev);
 
-    ESP_LOGI(TAG, "Waiting forever\n");
     for (int i = 0;; i++) {
-        vTaskDelay(1000 / portTICK_PERIOD_MS);
+        vTaskDelay(10000 / portTICK_PERIOD_MS);
+        heap_caps_print_heap_info(MALLOC_CAP_8BIT);
         fflush(stdout);
     }
 
