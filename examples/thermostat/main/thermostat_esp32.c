@@ -23,6 +23,26 @@ static const char* TAG = "Thermostat";
 #define CHECK_NABTO_ERR(err) do { if (err != NABTO_DEVICE_EC_OK) { ESP_LOGE(TAG, "Unexpected error at %s:%d, %s", __FILE__, __LINE__, nabto_device_error_get_message(err) ); esp_restart(); } } while (0)
 #define CHECK_NULL(ptr) do { if (ptr == NULL) { ESP_LOGE(TAG, "Unexpected out of memory at %s:%d", __FILE__, __LINE__); esp_restart(); } } while (0)
 
+struct use_all_memory_item {
+    struct nn_llist_node node;
+    uint8_t buffer[1024];
+};
+
+static const char* LOGM = "nabto";
+void logCallback(NabtoDeviceLogMessage* msg, void* data)
+{
+    if (msg->severity == NABTO_DEVICE_LOG_ERROR) {
+        ESP_LOGE(LOGM, "%s", msg->message);
+    } else if (msg->severity == NABTO_DEVICE_LOG_WARN) {
+        ESP_LOGW(LOGM, "%s", msg->message);
+    } else if (msg->severity == NABTO_DEVICE_LOG_INFO) {
+        ESP_LOGI(LOGM, "%s", msg->message);
+    } else if (msg->severity == NABTO_DEVICE_LOG_TRACE) {
+        ESP_LOGV(LOGM, "%s", msg->message);
+    }
+}
+
+
 void app_main(void)
 {
     // Initialize NVS
@@ -42,6 +62,11 @@ void app_main(void)
 
     NabtoDevice* dev = nabto_device_new();
     CHECK_NULL(dev);
+
+    nabto_device_set_log_callback(dev, logCallback, NULL);
+    CHECK_NABTO_ERR(nabto_device_set_log_level(dev, "trace"));
+
+    //nabto_device_set_basestation_attach(dev, false);
 
     nabto_esp32_example_load_private_key(dev, nvsHandle);
 
@@ -91,7 +116,8 @@ void app_main(void)
     connection_event_handler_init(&ceh, dev);
 
     for (int i = 0;; i++) {
-        vTaskDelay(1000 / portTICK_PERIOD_MS);
+        vTaskDelay(10000 / portTICK_PERIOD_MS);
+        heap_caps_print_heap_info(MALLOC_CAP_8BIT);
         fflush(stdout);
     }
 

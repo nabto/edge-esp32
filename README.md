@@ -44,6 +44,131 @@ Android: https://play.google.com/store/apps/details?id=com.nabto.edge.thermostat
 IOS: https://apps.apple.com/us/app/nabto-edge-thermostat/id1643535407
 
 
+## Flash and memory usage by nabto.
+
+For the measurements we measure the difference between the
+`examples/wifi/getting_started/station` example and the Nabto Edge Thermostat
+example.
+
+### Baseline resource usage measurements
+
+The `examples/wifi/getting_started/station` example has been modified to print
+out heap information in app_main() the following snippet has been added
+
+```
+void app_main(void) {
+    ...
+    ...
+    for (;;) {
+        vTaskDelay(10000/portTICK_PERIOD_MS);
+        heap_caps_print_heap_info(MALLOC_CAP_8BIT);
+	      fflush(stdout);
+    }
+}
+```
+
+Flash usage (`idf.py size`):
+```
+Total sizes:
+Used static DRAM:   31072 bytes ( 149664 remain, 17.2% used)
+      .data size:   15088 bytes
+      .bss  size:   15984 bytes
+Used static IRAM:   85166 bytes (  45906 remain, 65.0% used)
+      .text size:   84139 bytes
+   .vectors size:    1027 bytes
+Used Flash size :  615825 bytes
+           .text:  488759 bytes
+         .rodata:  126810 bytes
+Total image size:  716079 bytes (.bin may be padded larger)
+```
+
+Heap Usage (`heap_caps_print_heap_info(MALLOC_CAP_8BIT)`):
+```
+Heap summary for capabilities 0x00000004:
+  At 0x3ffae6e0 len 6432 free 4 allocated 4648 min_free 4
+    largest_free_block 0 alloc_blocks 39 free_blocks 0 total_blocks 39
+  At 0x3ffb7960 len 165536 free 107844 allocated 55448 min_free 103976
+    largest_free_block 104448 alloc_blocks 155 free_blocks 5 total_blocks 160
+  At 0x3ffe0440 len 15072 free 13448 allocated 0 min_free 13448
+    largest_free_block 13312 alloc_blocks 0 free_blocks 1 total_blocks 1
+  At 0x3ffe4350 len 113840 free 112216 allocated 0 min_free 112216
+    largest_free_block 110592 alloc_blocks 0 free_blocks 1 total_blocks 1
+  Totals:
+    free 233512 allocated 60096 min_free 229644 largest_free_block 110592
+```
+
+### Nabto Edge ESP32 Thermostat Example Resource usage
+
+Flash usage (`idf.py size`)
+```
+Total sizes:
+Used static DRAM:   34016 bytes ( 146720 remain, 18.8% used)
+      .data size:   15592 bytes
+      .bss  size:   18424 bytes
+Used static IRAM:   85878 bytes (  45194 remain, 65.5% used)
+      .text size:   84851 bytes
+   .vectors size:    1027 bytes
+Used Flash size :  926669 bytes
+           .text:  751227 bytes
+         .rodata:  175186 bytes
+Total image size: 1028139 bytes (.bin may be padded larger)
+```
+
+Heap Usage (`heap_caps_print_heap_info(MALLOC_CAP_8BIT)`):
+
+Just attached to the basestation
+```
+Heap summary for capabilities 0x00000004:
+  At 0x3ffae6e0 len 6432 free 4 allocated 4648 min_free 4
+    largest_free_block 0 alloc_blocks 39 free_blocks 0 total_blocks 39
+  At 0x3ffb84e0 len 162592 free 348 allocated 157032 min_free 4
+    largest_free_block 156 alloc_blocks 897 free_blocks 6 total_blocks 903
+  At 0x3ffe0440 len 15072 free 10468 allocated 2908 min_free 64
+    largest_free_block 6400 alloc_blocks 18 free_blocks 5 total_blocks 23
+  At 0x3ffe4350 len 113840 free 112216 allocated 0 min_free 110516
+    largest_free_block 110592 alloc_blocks 0 free_blocks 1 total_blocks 1
+  Totals:
+    free 123036 allocated 164588 min_free 110588 largest_free_block 11059
+```
+
+Attached and One connection
+```
+Heap summary for capabilities 0x00000004:
+  At 0x3ffae6e0 len 6432 free 4 allocated 4648 min_free 4
+    largest_free_block 0 alloc_blocks 39 free_blocks 0 total_blocks 39
+  At 0x3ffb84e0 len 162592 free 88 allocated 157264 min_free 4
+    largest_free_block 48 alloc_blocks 904 free_blocks 3 total_blocks 907
+  At 0x3ffe0440 len 15072 free 3432 allocated 9888 min_free 64
+    largest_free_block 1472 alloc_blocks 32 free_blocks 9 total_blocks 41
+  At 0x3ffe4350 len 113840 free 95492 allocated 16720 min_free 90392
+    largest_free_block 94208 alloc_blocks 1 free_blocks 1 total_blocks 2
+  Totals:
+    free 99016 allocated 188520 min_free 90464 largest_free_block 94208
+```
+
+Attached and Two connections
+```
+Heap summary for capabilities 0x00000004:
+  At 0x3ffae6e0 len 6432 free 4 allocated 4648 min_free 4
+    largest_free_block 0 alloc_blocks 39 free_blocks 0 total_blocks 39
+  At 0x3ffb84e0 len 162592 free 72 allocated 157264 min_free 4
+    largest_free_block 48 alloc_blocks 908 free_blocks 2 total_blocks 910
+  At 0x3ffe0440 len 15072 free 1408 allocated 11872 min_free 4
+    largest_free_block 1120 alloc_blocks 42 free_blocks 8 total_blocks 50
+  At 0x3ffe4350 len 113840 free 73516 allocated 38664 min_free 65948
+    largest_free_block 69632 alloc_blocks 9 free_blocks 4 total_blocks 13
+  Totals:
+    free 75000 allocated 212448 min_free 65960 largest_free_block 69632
+```
+
+### Nabto Edge Thermostat Example Resource Usage Summary
+
+Flash usage: `926669 bytes - 615825 bytes = 310844 bytes`
+Memory usage:
+  * Just attached: ~100kB
+  * Per connection: ~24kB
+
+
 ## WORK IN PROGRESS
 
 The below sections are work in progress and is not meant to be followed yet.

@@ -3,12 +3,12 @@
 #include "esp32_dns.h"
 #include "esp32_mdns.h"
 #include "nm_select_unix.h"
+#include "esp32_event_queue.h"
 
 #include <api/nabto_device_platform.h>
 #include <api/nabto_device_threads.h>
 #include <api/nabto_device_integration.h>
 
-#include <modules/event_queue/thread_event_queue.h>
 #include <modules/timestamp/unix/nm_unix_timestamp.h>
 #include <modules/unix/nm_unix_local_ip.h>
 
@@ -33,7 +33,7 @@ struct select_unix_platform
      * for this implementation. The purpose of the event queue is to
      * execute events.
      */
-    struct thread_event_queue eventQueue;
+    struct esp32_event_queue eventQueue;
 };
 
 /**
@@ -65,9 +65,9 @@ np_error_code nabto_device_platform_init(struct nabto_device_context* device, st
     struct np_tcp tcpImpl = nm_select_unix_tcp_get_impl(&platform->selectUnix);
 
 
-    thread_event_queue_init(&platform->eventQueue, coreMutex, &timestampImpl);
-    thread_event_queue_run(&platform->eventQueue);
-    struct np_event_queue eventQueueImpl = thread_event_queue_get_impl(&platform->eventQueue);
+    esp32_event_queue_init(&platform->eventQueue, coreMutex, &timestampImpl);
+    esp32_event_queue_run(&platform->eventQueue);
+    struct np_event_queue eventQueueImpl = esp32_event_queue_get_impl(&platform->eventQueue);
 
     esp32_mdns_start();
     struct np_mdns mdnsImpl = esp32_mdns_get_impl();
@@ -91,7 +91,7 @@ void nabto_device_platform_deinit(struct nabto_device_context* device)
 {
     struct select_unix_platform* platform = nabto_device_integration_get_platform_data(device);
     nm_select_unix_deinit(&platform->selectUnix);
-    thread_event_queue_deinit(&platform->eventQueue);
+    esp32_event_queue_deinit(&platform->eventQueue);
     free(platform);
 }
 
@@ -103,5 +103,5 @@ void nabto_device_platform_stop_blocking(struct nabto_device_context* device)
 {
     struct select_unix_platform* platform = nabto_device_integration_get_platform_data(device);
     nm_select_unix_stop(&platform->selectUnix);
-    thread_event_queue_stop_blocking(&platform->eventQueue);
+    esp32_event_queue_stop_blocking(&platform->eventQueue);
 }
