@@ -64,7 +64,7 @@ void app_main(void)
     CHECK_NULL(dev);
 
     nabto_device_set_log_callback(dev, logCallback, NULL);
-    CHECK_NABTO_ERR(nabto_device_set_log_level(dev, "trace"));
+    CHECK_NABTO_ERR(nabto_device_set_log_level(dev, "error"));
 
     //nabto_device_set_basestation_attach(dev, false);
 
@@ -119,7 +119,7 @@ void app_main(void)
 
     for (int i = 0;; i++) {
         vTaskDelay(10000 / portTICK_PERIOD_MS);
-        heap_caps_print_heap_info(MALLOC_CAP_8BIT);
+        //heap_caps_print_heap_info(MALLOC_CAP_8BIT);
         fflush(stdout);
     }
 

@@ -314,7 +314,8 @@ np_error_code udp_send_to(struct np_udp_socket* s, const struct np_udp_endpoint*
 
             if (status == EADDRNOTAVAIL || // if we send to ipv6 scopes we do not have
                 status == ENETUNREACH || // if we send ipv6 on a system without it.
-                status == EAFNOSUPPORT) // if we send ipv6 on an ipv4 only socket
+                status == EAFNOSUPPORT || // if we send ipv6 on an ipv4 only socket
+                status == EHOSTUNREACH) // if we send ipv6 on an ipv4 only socket
             {
                 NABTO_LOG_TRACE(LOG,"ERROR: (%i) '%s' in nm_epoll_event_send_to", (int) status, strerror(status));
             } else {
