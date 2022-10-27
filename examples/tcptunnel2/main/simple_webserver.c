@@ -1,6 +1,8 @@
 
 #include "simple_webserver.h"
 
+#include "esp_timer.h"
+
 
 static struct nn_log* web_logger;
 static const char* LOGM = "simple_webserver";
@@ -28,7 +30,7 @@ static const char* resp =
         "0123456789012345678901234567890123456789012345678\n";
 
 
-/* 
+/*
  * Hello world on http://<host>/uri
  */
 esp_err_t get_handler_hello(httpd_req_t *req)
@@ -40,14 +42,14 @@ esp_err_t get_handler_hello(httpd_req_t *req)
     return ESP_OK;
 }
 
-/* 
+/*
  * 1m stream of bytes on http://<host>/1m for stream performance testing
  */
 esp_err_t get_handler_1m(httpd_req_t *req)
 {
 
 /* Send a simple response */
-    
+
     // Create a 1k byte buffer chuck
     char resp_1k[1000];
     int len = 1000;
@@ -55,9 +57,9 @@ esp_err_t get_handler_1m(httpd_req_t *req)
         memcpy(resp_1k+(i*100), resp, 100);
     }
     resp_1k[999]=0;
-    
+
     printf("strlen:%d 1000000/len:%d", len, 1000000/len);
-    
+
     int64_t start_time = esp_timer_get_time();
 
     // Send 1m chunk
@@ -67,7 +69,7 @@ esp_err_t get_handler_1m(httpd_req_t *req)
             NN_LOG_INFO(web_logger, LOGM, "Could not send chunk %i", t);
             return ESP_FAIL;
         }
-        
+
     }
     // send last 0 chunk to end the stream
     httpd_resp_send_chunk(req, (const char *) resp, 0);
@@ -75,21 +77,21 @@ esp_err_t get_handler_1m(httpd_req_t *req)
     int64_t end_time = esp_timer_get_time();
     int64_t time = end_time - start_time;
     float kb = 1000000/1024;
-    
+
     NN_LOG_INFO(web_logger, LOGM, "Finished in %lldms kb=%f kb/s=%f", time/1000, kb, kb/((float)time/1000000));
 
     return ESP_OK;
 }
 
 
-/* 
+/*
  * 100k stream of bytes on http://<host>/100k for stream performance testing
  */
 esp_err_t get_handler_100k(httpd_req_t *req)
 {
 
 /* Send a simple response */
-    
+
     // Create a 1k byte buffer chuck
     char resp_1k[1000];
     int len = 1000;
@@ -97,9 +99,9 @@ esp_err_t get_handler_100k(httpd_req_t *req)
         memcpy(resp_1k+(i*100), resp, 100);
     }
     resp_1k[999]=0;
-    
+
     printf("strlen:%d 100000/len:%d", len, 100000/len);
-    
+
     int64_t start_time = esp_timer_get_time();
 
     // Send 1m chunk
@@ -109,7 +111,7 @@ esp_err_t get_handler_100k(httpd_req_t *req)
             NN_LOG_INFO(web_logger, LOGM, "Could not send chunk %i", t);
             return ESP_FAIL;
         }
-        
+
     }
     // send last 0 chunk to end the stream
     httpd_resp_send_chunk(req, (const char *) resp, 0);
@@ -117,20 +119,20 @@ esp_err_t get_handler_100k(httpd_req_t *req)
     int64_t end_time = esp_timer_get_time();
     int64_t time = end_time - start_time;
     float kb = 100000/1024;
-    
+
     NN_LOG_INFO(web_logger, LOGM, "Finished in %lldms kb=%f kb/s=%f", time/1000, kb, kb/((float)time/100000));
 
     return ESP_OK;
 }
 
-/* 
+/*
  * 10k stream of bytes on http://<host>/10k for stream performance testing
  */
 esp_err_t get_handler_10k(httpd_req_t *req)
 {
 
 /* Send a simple response */
-    
+
     // Create a 1k byte buffer chuck
     char resp_1k[1000];
     int len = 1000;
@@ -138,9 +140,9 @@ esp_err_t get_handler_10k(httpd_req_t *req)
         memcpy(resp_1k+(i*100), resp, 100);
     }
     resp_1k[999]=0;
-    
+
     printf("strlen:%d 10000/len:%d", len, 10000/len);
-    
+
     int64_t start_time = esp_timer_get_time();
 
     // Send 1m chunk
@@ -150,7 +152,7 @@ esp_err_t get_handler_10k(httpd_req_t *req)
             NN_LOG_INFO(web_logger, LOGM, "Could not send chunk %i", t);
             return ESP_FAIL;
         }
-        
+
     }
     // send last 0 chunk to end the stream
     httpd_resp_send_chunk(req, (const char *) resp, 0);
@@ -158,7 +160,7 @@ esp_err_t get_handler_10k(httpd_req_t *req)
     int64_t end_time = esp_timer_get_time();
     int64_t time = end_time - start_time;
     float kb = 10000/1024;
-    
+
     NN_LOG_INFO(web_logger, LOGM, "Finished in %lldms kb=%f kb/s=%f", time/1000, kb, kb/((float)time/10000));
 
     return ESP_OK;
@@ -198,19 +200,19 @@ httpd_uri_t uri_get_10k = {
     .user_ctx = NULL
 };
 
-/* 
+/*
  * Function for starting the webserver
  */
 httpd_handle_t start_webserver(struct nn_log* logger)
 {
 
     web_logger = logger;
-    
+
     /* Generate default configuration */
     httpd_config_t config = HTTPD_DEFAULT_CONFIG();
     config.server_port = 80;
 
-    
+
     /* Empty handle to esp_http_server */
     httpd_handle_t server = NULL;
 
@@ -227,7 +229,7 @@ httpd_handle_t start_webserver(struct nn_log* logger)
     if(server != NULL) {
         NN_LOG_INFO(web_logger, LOGM, "Webserver created");
     }
-    
+
     return server;
 }
 
