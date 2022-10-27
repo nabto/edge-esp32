@@ -96,6 +96,8 @@ void app_main(void)
 
     thermostat_init(&thermostat, dev, &iam.iam, &thermostatState, &logger);
 
+    CHECK_NABTO_ERR(nabto_device_limit_connections(dev, 3));
+
     NabtoDeviceFuture* future = nabto_device_future_new(dev);
     CHECK_NULL(future);
 
