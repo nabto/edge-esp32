@@ -114,7 +114,7 @@ void app_main(void) {
     for (;;) {
         vTaskDelay(10000/portTICK_PERIOD_MS);
         heap_caps_print_heap_info(MALLOC_CAP_8BIT);
-	      fflush(stdout);
+        fflush(stdout);
     }
 }
 ```
