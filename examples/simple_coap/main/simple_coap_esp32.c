@@ -22,25 +22,10 @@ static const char *TAG = "simple demo";
 
 void app_main(void)
 {
-    // Initialize NVS
-    esp_err_t ret = nvs_flash_init();
-    if (ret == ESP_ERR_NVS_NO_FREE_PAGES ||
-        ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
-        ESP_ERROR_CHECK(nvs_flash_erase());
-        ret = nvs_flash_init();
-    }
-    ESP_ERROR_CHECK(ret);
-
-    nvs_handle_t nvsHandle;
-    ret = nvs_open("nabto", NVS_READWRITE, &nvsHandle);
-    ESP_ERROR_CHECK(ret);
-
     nabto_esp32_example_init_wifi();
 
     NabtoDevice* dev = nabto_device_new();
     CHECK_NULL(dev);
-
-    nabto_esp32_example_load_private_key(dev, nvsHandle);
 
     CHECK_NABTO_ERR(nabto_esp32_example_set_ids(dev));
 

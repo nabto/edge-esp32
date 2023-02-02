@@ -67,7 +67,7 @@ void app_main(void)
 
     //nabto_device_set_basestation_attach(dev, false);
 
-    nabto_esp32_example_load_private_key(dev, nvsHandle);
+    //nabto_esp32_example_load_private_key(dev, nvsHandle);
 
     CHECK_NABTO_ERR(nabto_esp32_example_set_ids(dev));
 
