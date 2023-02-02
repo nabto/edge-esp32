@@ -16,7 +16,6 @@
 #include "lwip/err.h"
 #include "lwip/sys.h"
 #include "nvs_flash.h"
-#include "wifi_init.h"
 
 static const char* TAG = "nabto_esp32_example";
 
