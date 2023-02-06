@@ -60,8 +60,8 @@ idf_component_register(
   INCLUDE_DIRS
     ${ne_include_dirs}
     ${ne_nn_include_dirs}
-  PRIV_INCLUDE_DIRS
     ${ne_priv_include_dirs_no_tls}
+  PRIV_INCLUDE_DIRS
     include
   REQUIRES mbedtls pthread mdns)
 
