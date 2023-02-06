@@ -23,7 +23,7 @@ static const char* TAG = "nabto_esp32_example";
 #define EXAMPLE_NABTO_DEVICE_ID CONFIG_NABTO_DEVICE_ID
 #define EXAMPLE_NABTO_PRIVATE_KEY CONFIG_NABTO_PRIVATE_KEY
 
-NabtoDeviceError nabto_esp32_example_set_ids(NabtoDevice *dev)
+NabtoDeviceError nabto_esp32_example_set_id_and_key(NabtoDevice *dev)
 {
     NabtoDeviceError err =
         nabto_device_set_product_id(dev, EXAMPLE_NABTO_PRODUCT_ID);

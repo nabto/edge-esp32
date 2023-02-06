@@ -27,7 +27,7 @@ void app_main(void)
     NabtoDevice* dev = nabto_device_new();
     CHECK_NULL(dev);
 
-    CHECK_NABTO_ERR(nabto_esp32_example_set_ids(dev));
+    CHECK_NABTO_ERR(nabto_esp32_example_set_id_and_key(dev));
 
     CHECK_NABTO_ERR(nabto_device_enable_mdns(dev));
 

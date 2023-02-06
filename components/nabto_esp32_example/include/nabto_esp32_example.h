@@ -5,7 +5,7 @@
 
 #include "nvs_flash.h"
 
-NabtoDeviceError nabto_esp32_example_set_ids(NabtoDevice* device);
+NabtoDeviceError nabto_esp32_example_set_id_and_key(NabtoDevice* device);
 
 void nabto_esp32_example_init_wifi();
 

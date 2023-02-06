@@ -12,36 +12,32 @@ This guide requires that the tools has been setup as described on
 https://docs.espressif.com/projects/esp-idf/en/latest/esp32/get-started/ it's
 also a good idea to have basic knowledge about ESP-IDF and their tools.
 
+
+For the demos we need the [Edge Key
+Tool](https://github.com/nabto/edge-key-tool) and we need access to the [Nabto
+Cloud Console](https://console.cloud.nabto.com)
+
 Goto the folder examples/thermostat
 
 First we need to configure the example. We need to configure the product_id,
 device_id, wifi network and wifi password. start the configuration utility by
 running `idf.py menuconfig` goto `Component Config -> Nabto Example`. The
 product_id and device_id is created on the Nabto Cloud Console
-https://console.cloud.nabto.com
+https://console.cloud.nabto.com and the private_key is created using the Edge
+Key Tool, the fingerprint from the Edge Key Tool should be inserted into the
+device in the console.
 
 When the example has been configured the code is built with `idf.py build` and
 flashed to the esp32 using `idf.py flash` once the code has been flashed see the
 output from the demo using `idf.py monitor`
 
-Once the example is running it says
-
-```
-I (31455) device_event_handler: The fingerprint ... is not known by the Nabto Edge Cloud. fix it on
-https://console.cloud.nabto.com
-```
-
-It means that the fingerprint for the device needs to be registered in the nabto
-cloud console. Copy the fingerprint and configure the device with that
-fingerprint in the Nabto Cloud Console.
-
 When everything is ok the example writes: `I (44705) device_event_handler:
 Attached to the basestation`.
 
-The thermostat example can be tested using either the IOS or Android app.
-
-Android: https://play.google.com/store/apps/details?id=com.nabto.edge.thermostatdemo
-IOS: https://apps.apple.com/us/app/nabto-edge-thermostat/id1643535407
+The thermostat example can be tested using either the
+[IOS](https://apps.apple.com/us/app/nabto-edge-thermostat/id1643535407) or
+[Android](https://play.google.com/store/apps/details?id=com.nabto.edge.thermostatdemo)
+app.
 
 ## examples/simple_coap
 
