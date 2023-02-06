@@ -69,7 +69,7 @@ void app_main(void)
 
     //nabto_esp32_example_load_private_key(dev, nvsHandle);
 
-    CHECK_NABTO_ERR(nabto_esp32_example_set_ids(dev));
+    CHECK_NABTO_ERR(nabto_esp32_example_set_id_and_key(dev));
 
     CHECK_NABTO_ERR(nabto_device_enable_mdns(dev));
     CHECK_NABTO_ERR(nabto_device_mdns_add_subtype(dev, "tcptunnel"));
