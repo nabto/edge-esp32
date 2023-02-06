@@ -1,5 +1,5 @@
-include(${CMAKE_CURRENT_LIST_DIR}/../../nabto-embedded-sdk/nabto_primary_files.cmake)
-include(${CMAKE_CURRENT_LIST_DIR}/../../nabto-embedded-sdk/nabto_modules_files.cmake)
+include(${CMAKE_CURRENT_LIST_DIR}/../../../nabto-embedded-sdk/nabto_primary_files.cmake)
+include(${CMAKE_CURRENT_LIST_DIR}/../../../nabto-embedded-sdk/nabto_modules_files.cmake)
 
 
 idf_component_register(
@@ -12,7 +12,7 @@ idf_component_register(
     ${ne_include_dirs}
     ${ne_iam_include_dirs}
     ${ne_cjson_include_dir}
-    ${CMAKE_CURRENT_LIST_DIR}/../../nabto-embedded-sdk
+    ${CMAKE_CURRENT_LIST_DIR}/../../../nabto-embedded-sdk
     include
   REQUIRES
     nabto_device nvs_flash nabto_esp32_util
