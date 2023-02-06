@@ -1,10 +1,10 @@
-# Nabto Edge ESP32 Integration (BETA)
+# Nabto Edge ESP32 Integration
 
 This repository includes examples of how to make a Nabto Edge integration using the esp32. For a general introduction to Nabto Edge, please see https://docs.nabto.com as well as the [integration guide](https://docs.nabto.com/developer/guides/concepts/integration/intro.html).
 
 ## examples/thermostat
 
-The thermostat example is a port of the thermostat found in the Nabto Edge Embedded SDK.
+The thermostat example is a port of the thermostat example found in the Nabto Edge Embedded SDK.
 
 ### Using the Thermostat example
 
@@ -69,13 +69,13 @@ can be used.
 
 Clone this repository and use the nabto_device component.
 
-git clone --recursive https://github.com/nabto/edge-esp32-beta
+git clone --recursive https://github.com/nabto/edge-esp32
 
 in the current esp32 project add the path to the checkout
 
 
 ```
-set(EXTRA_COMPONENT_DIRS ../edge-esp32-beta/components)
+set(EXTRA_COMPONENT_DIRS ../edge-esp32/components)
 cmake_minimum_required(VERSION 3.5)
 include($ENV{IDF_PATH}/tools/cmake/project.cmake)
 project(example_with_nabto)
