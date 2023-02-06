@@ -1,9 +1,0 @@
-menu "Nabto Thermostat"
-
-    config NABTO_THERMOSTAT_POWER_LED
-    	int "Power status LED GPIO number"
-    	default 21
-   		help
-    		Enter the GPIO number which is used to show the power status
-
-endmenu

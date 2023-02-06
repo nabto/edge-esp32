@@ -21,11 +21,10 @@ Goto the folder examples/thermostat
 
 First we need to configure the example. We need to configure the product_id,
 device_id, wifi network and wifi password. start the configuration utility by
-running `idf.py menuconfig` goto `Component Config -> Nabto Example`. The
-product_id and device_id is created on the Nabto Cloud Console
-https://console.cloud.nabto.com and the private_key is created using the Edge
-Key Tool, the fingerprint from the Edge Key Tool should be inserted into the
-device in the console.
+running `idf.py menuconfig` goto `Example Configuration`. The product_id and
+device_id is created on the Nabto Cloud Console https://console.cloud.nabto.com
+and the private_key is created using the Edge Key Tool, the fingerprint from the
+Edge Key Tool should be inserted into the device in the console.
 
 When the example has been configured the code is built with `idf.py build` and
 flashed to the esp32 using `idf.py flash` once the code has been flashed see the

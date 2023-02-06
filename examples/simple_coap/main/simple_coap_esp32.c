@@ -15,7 +15,7 @@
 #include <nabto/nabto_device.h>
 #include <nn/log.h>
 
-static const char *TAG = "simple demo";
+static const char *TAG = "simple CoAP";
 
 #define CHECK_NABTO_ERR(err) do { if (err != NABTO_DEVICE_EC_OK) { ESP_LOGE(TAG, "Unexpected error at %s:%d, %s", __FILE__, __LINE__, nabto_device_error_get_message(err) ); esp_restart(); } } while (0)
 #define CHECK_NULL(ptr) do { if (ptr == NULL) { ESP_LOGE(TAG, "Unexpected out of memory at %s:%d", __FILE__, __LINE__); esp_restart(); } } while (0)
@@ -53,8 +53,6 @@ void app_main(void)
     ESP_LOGI(TAG, "Started nabto device with fingerprint %s", fingerprint);
     nabto_device_string_free(fingerprint);
 
-
-    ESP_LOGI(TAG, "Waiting forever\n");
     for (int i = 0; ; i++) {
 
         vTaskDelay(1000 / portTICK_PERIOD_MS);
