@@ -21,7 +21,7 @@ static const char* TAG = "nabto_esp32_example";
 
 #define EXAMPLE_NABTO_PRODUCT_ID CONFIG_EXAMPLE_NABTO_PRODUCT_ID
 #define EXAMPLE_NABTO_DEVICE_ID CONFIG_EXAMPLE_NABTO_DEVICE_ID
-#define EXAMPLE_NABTO_PRIVATE_KEY CONFIG_EXAMPLE_NABTO_PRIVATE_KEY
+#define EXAMPLE_NABTO_RAW_PRIVATE_KEY CONFIG_EXAMPLE_NABTO_RAW_PRIVATE_KEY
 
 NabtoDeviceError nabto_esp32_example_set_id_and_key(NabtoDevice *dev)
 {
@@ -38,14 +38,14 @@ NabtoDeviceError nabto_esp32_example_set_id_and_key(NabtoDevice *dev)
     }
     ESP_LOGI(TAG, "Setting nabto device id : %s", EXAMPLE_NABTO_DEVICE_ID);
 
-    if (strlen(EXAMPLE_NABTO_PRIVATE_KEY) != 64) {
-        ESP_LOGE(TAG, "The private key (%s) is not a 64 character long hex string.", EXAMPLE_NABTO_PRIVATE_KEY);
+    if (strlen(EXAMPLE_NABTO_RAW_PRIVATE_KEY) != 64) {
+        ESP_LOGE(TAG, "The private key (%s) is not a 64 character long hex string.", EXAMPLE_NABTO_RAW_PRIVATE_KEY);
     }
 
     uint8_t key[32];
 
-    if(!np_hex_to_data(EXAMPLE_NABTO_PRIVATE_KEY, key, sizeof(key))) {
-        ESP_LOGE(TAG, "Cannot convert the private key (%s) from hex to bytes", EXAMPLE_NABTO_PRIVATE_KEY);
+    if(!np_hex_to_data(EXAMPLE_NABTO_RAW_PRIVATE_KEY, key, sizeof(key))) {
+        ESP_LOGE(TAG, "Cannot convert the private key (%s) from hex to bytes", EXAMPLE_NABTO_RAW_PRIVATE_KEY);
         return NABTO_DEVICE_EC_FAILED;
     }
 
@@ -60,7 +60,7 @@ NabtoDeviceError nabto_esp32_example_set_id_and_key(NabtoDevice *dev)
         return err;
     }
 
-    ESP_LOGI(TAG, "Setting nabto private key : %s", EXAMPLE_NABTO_PRIVATE_KEY);
+    ESP_LOGI(TAG, "Setting nabto private key : %s", EXAMPLE_NABTO_RAW_PRIVATE_KEY);
     ESP_LOGI(TAG, "The fingerprint for the device is: %s", fingerprint);
     nabto_device_string_free(fingerprint);
 

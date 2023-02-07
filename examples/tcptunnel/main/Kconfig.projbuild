@@ -12,7 +12,7 @@ menu "Example Configuration"
    		help
     		Enter the Nabto id - you can get one by signing up to the nabto console
     
-    config EXAMPLE_NABTO_PRIVATE_KEY
+    config EXAMPLE_NABTO_RAW_PRIVATE_KEY
    		string "Nabto Raw Private Key from https://github.com/nabto/edge_key_tool"
    		default ""
    		help
