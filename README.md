@@ -1,6 +1,8 @@
 # Nabto Edge ESP32 Integration
 
-This repository includes examples of how to make a Nabto Edge integration using the esp32. For a general introduction to Nabto Edge, please see https://docs.nabto.com as well as the [integration guide](https://docs.nabto.com/developer/guides/concepts/integration/intro.html).
+This repository includes examples of how to make a Nabto Edge integration using the [Espressif ESP32](https://www.espressif.com/en/products/modules/esp32) module.
+
+For more information about using the Nabto Edge Embedded SDK with ESP32, read our [ESP32 Platform Guide](https://docs.nabto.com/developer/platforms/embedded/esp32.html). For a general introduction to Nabto Edge, please see https://docs.nabto.com.
 
 ## examples/thermostat
 
