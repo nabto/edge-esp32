@@ -175,7 +175,7 @@ Heap summary for capabilities 0x00000004:
   At 0x3ffe4350 len 113840 free 112216 allocated 0 min_free 110516
     largest_free_block 110592 alloc_blocks 0 free_blocks 1 total_blocks 1
   Totals:
-    free 123036 allocated 164588 min_free 110588 largest_free_block 11059
+    free 123036 allocated 164588 min_free 110588 largest_free_block 110592
 ```
 
 Attached and One connection
