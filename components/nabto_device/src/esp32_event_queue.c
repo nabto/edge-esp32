@@ -63,6 +63,9 @@ np_error_code esp32_event_queue_run(struct esp32_event_queue* queue)
     esp_pthread_cfg_t pthreadConfig = esp_pthread_get_default_config();
     pthreadConfig.stack_size = EVENT_QUEUE_THREAD_STACK_SIZE;
     pthreadConfig.thread_name = "EventQueue";
+    // Possible make these configurable
+    pthreadConfig.prio = 25;
+    //pthreadConfig.pin_to_core = 1;
 
     esp_err_t err = esp_pthread_set_cfg(&pthreadConfig);
     if (err != ESP_OK) {

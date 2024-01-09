@@ -57,7 +57,9 @@ void nm_select_unix_run(struct nm_select_unix* ctx)
     esp_pthread_cfg_t pthreadConfig = esp_pthread_get_default_config();
     pthreadConfig.stack_size = NETWORK_THREAD_STACK_SIZE;
     pthreadConfig.thread_name = "Network";
-
+    pthreadConfig.prio = 25;
+    //pthreadConfig.pin_to_core = 1;
+    
     esp_err_t err = esp_pthread_set_cfg(&pthreadConfig);
     if (err != ESP_OK) {
         NABTO_LOG_ERROR(LOG, "Cannot set pthread cfg");
