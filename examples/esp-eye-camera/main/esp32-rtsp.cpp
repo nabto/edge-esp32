@@ -237,7 +237,7 @@ void rtsp_server(void*)
         }
 
         printf("Client connected from: %s, creating new worker\n", inet_ntoa(client_addr.sin_addr));
-        xTaskCreate(client_worker, "client-worker", 3584, (void*)client_socket, tskIDLE_PRIORITY, &xHandle);
+        xTaskCreate(client_worker, "client-worker", 4096, (void*)client_socket, tskIDLE_PRIORITY, &xHandle);
         //xTaskCreatePinnedToCore(client_worker, "client-worker", 3584, (void*)client_socket, 35, &xHandle, 1);
     }
 

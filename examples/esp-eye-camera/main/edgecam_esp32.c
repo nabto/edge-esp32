@@ -79,7 +79,7 @@ void app_main(void)
     CHECK_NABTO_ERR(nabto_device_mdns_add_subtype(dev, "tcptunnel"));
     CHECK_NABTO_ERR(nabto_device_mdns_add_txt_item(dev, "fn", "esp32-cam"));
 
-    CHECK_NABTO_ERR(nabto_device_set_app_name(dev, "esp32-cam"));
+    CHECK_NABTO_ERR(nabto_device_set_app_name(dev, "Tcp Tunnel"));
 
     struct nn_log logger;
     nabto_esp32_util_nn_log_init(&logger);
