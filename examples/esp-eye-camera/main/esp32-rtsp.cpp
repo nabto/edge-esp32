@@ -147,12 +147,6 @@ camera_config_t espeye_config{
     .sccb_i2c_port = -1
 };
 
-/*
-#ifndef ARDUINO_ARCH_ESP32
-#endif
-*/
-
-
 
 extern "C" void rtsp_server(void*);
 void rtsp_server(void*)
