@@ -58,9 +58,6 @@ void client_worker(void * client)
     int n=0;
     unsigned long lastMeasurement = millis();
     
-    //OV2640Streamer * streamer = new OV2640Streamer((SOCKET)client, cam);
-    //CRtspSession * session = new CRtspSession((SOCKET)client, streamer);
-
     streamer = new OV2640Streamer((SOCKET)client, cam);
     session = new CRtspSession((SOCKET)client, streamer);
 
@@ -141,7 +138,7 @@ camera_config_t espeye_config{
     // .frame_size = FRAMESIZE_XGA, // needs 96K or even smaller FRAMESIZE_SVGA - can work if using only 1 fb
     .frame_size = CAM_FRAMESIZE,
     .jpeg_quality = 12, //0-63 lower numbers are higher quality
-    .fb_count = 1,      // if more than one i2s runs in continous mode.  Use only with jpeg
+    .fb_count = 2,      // if more than one i2s runs in continous mode.  Use only with jpeg
     .fb_location = CAMERA_FB_IN_PSRAM,
     .grab_mode = CAMERA_GRAB_WHEN_EMPTY,
     .sccb_i2c_port = -1
@@ -158,7 +155,11 @@ void rtsp_server(void*)
     socklen_t client_addr_len = sizeof(client_addr);
     TaskHandle_t xHandle = NULL;
 
+    // Camera board configuration
     camera_config_t config = espeye_config;
+    //camera_config_t config = esp32cam_config; // NOT TESTED
+    //camera_config_t config = esp32cam_aithinker_config;
+
     config.frame_size = CAM_FRAMESIZE;
     config.jpeg_quality = CAM_QUALITY;
     cam.init(config);

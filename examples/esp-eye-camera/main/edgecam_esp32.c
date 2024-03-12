@@ -69,10 +69,6 @@ void app_main(void)
     nabto_device_set_log_callback(dev, logCallback, NULL);
     CHECK_NABTO_ERR(nabto_device_set_log_level(dev, "trace"));
 
-    //nabto_device_set_basestation_attach(dev, false);
-
-    //nabto_esp32_example_load_private_key(dev, nvsHandle);
-
     CHECK_NABTO_ERR(nabto_esp32_example_set_id_and_key(dev));
 
     CHECK_NABTO_ERR(nabto_device_enable_mdns(dev));
@@ -95,7 +91,7 @@ void app_main(void)
     CHECK_NABTO_ERR(nabto_device_add_tcp_tunnel_service_metadata(dev, "rtsp", "rtsp-path", "/mjpeg/1"));
 
     CHECK_NABTO_ERR(nabto_device_limit_connections(dev, 8));
-    CHECK_NABTO_ERR(nabto_device_limit_stream_segments(dev, 80));
+    CHECK_NABTO_ERR(nabto_device_limit_stream_segments(dev, 200));
 
     NabtoDeviceFuture* future = nabto_device_future_new(dev);
     CHECK_NULL(future);
@@ -117,7 +113,6 @@ void app_main(void)
     connection_event_handler_init(&ceh, dev);
 
     xTaskCreate(rtsp_server, "rtsp-server", 3584, NULL, tskIDLE_PRIORITY, &xHandle_RTSP_Server);
-    //xTaskCreatePinnedToCore(rtsp_server, "rtsp-server", 3584, NULL, 35, &xHandle_RTSP_Server, 1);
 
     perfmon_start();
     
