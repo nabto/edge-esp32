@@ -1,0 +1,33 @@
+menu "TCP stream server configuration"
+
+config TCP_SERVER_URL
+    string "TCP URL"
+    default "192.168.4.1"
+        help
+               Adress to use 
+
+config TCP_SERVER_PORT
+    int "TCP PORT"
+    default "8000"
+        help
+               Port to use
+
+config TCP_SERVER_KEEPALIVE_IDLE
+    int "TCP keep-alive idle time(s)"
+    default 5
+    help
+        Keep-alive idle time. In idle time without receiving any data from peer, will send keep-alive probe packet
+
+config TCP_SERVER_KEEPALIVE_INTERVAL
+    int "TCP keep-alive interval time(s)"
+    default 5
+    help
+        Keep-alive probe packet interval time.
+
+config TCP_SERVER_KEEPALIVE_COUNT
+    int "TCP keep-alive packet retry send counts"
+    default 3
+    help
+        Keep-alive probe packet retry count.
+
+endmenu
