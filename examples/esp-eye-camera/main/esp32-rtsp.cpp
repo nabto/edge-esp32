@@ -61,8 +61,8 @@ void client_worker(void * client)
     streamer = new OV2640Streamer((SOCKET)client, cam);
     session = new CRtspSession((SOCKET)client, streamer);
 
-    unsigned long lastFrameTime = 0;
-    const unsigned long msecPerFrame = (1000 / CONFIG_CAM_FRAMERATE);
+    //unsigned long lastFrameTime = 0;
+    //const unsigned long msecPerFrame = (1000 / CONFIG_CAM_FRAMERATE);
 
 
     while (session->m_stopped == false)
@@ -70,26 +70,13 @@ void client_worker(void * client)
         session->handleRequests(0);
 
         unsigned long now = millis();
-        if ((now > (lastFrameTime + msecPerFrame)) || (now < lastFrameTime))
-        {
-            session->broadcastCurrentFrame(now);
-            lastFrameTime = now;
+        session->broadcastCurrentFrame(now);
 
-            unsigned long newMeasurement = millis();
-            n++;
-            if(n == 20) {
-                printf("FPS: %3.2f \n", 1000.f/((newMeasurement-lastMeasurement)/20));
-                n=0;
-                lastMeasurement = newMeasurement;
-            }
-
-            
-        }
-        else
-        {
-            //let the system do something else for a bit
-            //vTaskDelay(1);
-            delay(5);
+        n++;
+        if(n == 20) {
+            printf("FPS: %3.2f \n", 1000.f/((now-lastMeasurement)/20));
+            n=0;
+            lastMeasurement = now;
         }
 
     }
@@ -156,9 +143,9 @@ void rtsp_server(void*)
     TaskHandle_t xHandle = NULL;
 
     // Camera board configuration
-    camera_config_t config = espeye_config;
+    //camera_config_t config = espeye_config;
     //camera_config_t config = esp32cam_config; // NOT TESTED
-    //camera_config_t config = esp32cam_aithinker_config;
+    camera_config_t config = esp32cam_aithinker_config;
 
     config.frame_size = CAM_FRAMESIZE;
     config.jpeg_quality = CAM_QUALITY;
