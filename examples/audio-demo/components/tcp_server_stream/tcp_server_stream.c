@@ -106,6 +106,7 @@ static esp_err_t _tcp_server_read(audio_element_handle_t self, char *buffer, int
     tcp_server_stream_t *tcp = (tcp_server_stream_t *)audio_element_getdata(self);
 
     ESP_LOGD(TAG, "tcp_server_stream_read()");
+
     
     int rlen = read(tcp->connect_sock, buffer, len);
     if (rlen < 0) {
@@ -122,6 +123,7 @@ static esp_err_t _tcp_server_read(audio_element_handle_t self, char *buffer, int
 
     audio_element_update_byte_pos(self, rlen);
     ESP_LOGD(TAG, "read len=%d, rlen=%d", len, rlen);
+    printf("read len=%d, rlen=%d\n", len, rlen);
     return rlen;
 }
 
@@ -135,6 +137,7 @@ static esp_err_t _tcp_server_write(audio_element_handle_t self, char *buffer, in
     for(int i=0;i<len;i++) {
         sum += buffer[i];
     }
+    //printf("socket:%d . buffer sum: %d ", tcp->connect_sock, sum);
     ESP_LOGD(TAG, "socket:%d . buffer sum: %d ", tcp->connect_sock, sum);
     
     wlen = write(tcp->connect_sock, buffer, len);
@@ -226,6 +229,7 @@ audio_element_handle_t tcp_server_stream_init(tcp_server_stream_cfg_t *config)
         cfg.buffer_len = TCP_SERVER_STREAM_BUF_SIZE;
     }
 
+    
     tcp_server_stream_t *tcp = audio_calloc(1, sizeof(tcp_server_stream_t));
     AUDIO_MEM_CHECK(TAG, tcp, return NULL);
 
@@ -247,6 +251,8 @@ audio_element_handle_t tcp_server_stream_init(tcp_server_stream_cfg_t *config)
     }
 
     el = audio_element_init(&cfg);
+    audio_element_set_output_ringbuf_size(el, 20*1024);
+        
     AUDIO_MEM_CHECK(TAG, el, goto _tcp_init_exit);
     audio_element_setdata(el, tcp);
 

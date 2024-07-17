@@ -16,7 +16,7 @@
 #include "esp_log.h"
 #include "nvs_flash.h"
 #include "esp_netif.h"
-#include "protocol_examples_common.h"
+//#include "protocol_examples_common.h"
 
 #include "lwip/err.h"
 #include "lwip/sockets.h"
@@ -30,14 +30,30 @@
 #include "tcp_client_stream.h"
 #include "wav_decoder.h"
 #include "wav_encoder.h"
+#include "pcm_decoder.h"
 #include "i2s_stream.h"
-#include "driver/i2s.h"
+#include "filter_resample.h"
+
+//#include "driver/i2s.h"
+#include "driver/i2s_std.h"
+
 
 #include "board.h"
 #include "audio_idf_version.h"
 
 // This component setup
 #include "tcp_server_stream.h"
+
+// Nabto stuff
+#include <nabto/nabto_device.h>
+#include "nabto_esp32_example.h"
+#include "nabto_esp32_iam.h"
+#include "edgecam_iam.h"
+#include "device_event_handler.h"
+#include "connection_event_handler.h"
+//#include "esp32_perfmon.h"
+#include "nabto_esp32_util.h"
+
 
 
 /*
@@ -50,59 +66,107 @@
 static const char *TAG = "TCP_SERVER_STREAM_EXAMPLE";
 
 
-// I2S pin configuration for LyraT Mini
-#define I2S_BCK_PIN    27
-#define I2S_WS_PIN     26
-#define I2S_DO_PIN     25
-#define I2S_DI_PIN     35
 
-void setup_i2s_pins() {
-    i2s_config_t i2s_config = {
-        .mode = I2S_MODE_MASTER | I2S_MODE_TX | I2S_MODE_RX,
-        .sample_rate = 16000,
-        .bits_per_sample = I2S_BITS_PER_SAMPLE_16BIT,
-        .channel_format = I2S_CHANNEL_FMT_RIGHT_LEFT,
-        //.communication_format = I2S_COMM_FORMAT_I2S_MSB,
-        .intr_alloc_flags = ESP_INTR_FLAG_LEVEL1,
-        .dma_buf_count = 8,
-        .dma_buf_len = 1024,
-        .use_apll = false,
-        .tx_desc_auto_clear = true,
-        .fixed_mclk = 0
-    };
-    i2s_pin_config_t pin_config = {
-        .bck_io_num = I2S_BCK_PIN,
-        .ws_io_num = I2S_WS_PIN,
-        .data_out_num = I2S_DO_PIN,
-        .data_in_num = I2S_DI_PIN
-    };
-    i2s_driver_install(I2S_NUM_0, &i2s_config, 0, NULL);
-    i2s_set_pin(I2S_NUM_0, &pin_config);
+#define CHECK_NABTO_ERR(err) do { if (err != NABTO_DEVICE_EC_OK) { ESP_LOGE(LOGM, "Unexpected error at %s:%d, %s", __FILE__, __LINE__, nabto_device_error_get_message(err) ); printf("ERROR!!!\n"); esp_restart(); } } while (0)
+#define CHECK_NULL(ptr) do { if (ptr == NULL) { ESP_LOGE(LOGM, "Unexpected out of memory at %s:%d", __FILE__, __LINE__); printf("MEMORY-ERROR\n"); esp_restart(); } } while (0)
+
+
+static const char* LOGM = "nabto";
+void logCallback(NabtoDeviceLogMessage* msg, void* data)
+{
+    //ESP_LOGI(LOGM, "%s", msg->message);
+    if (msg->severity == NABTO_DEVICE_LOG_ERROR) {
+        ESP_LOGE(LOGM, "%s", msg->message);
+    } else if (msg->severity == NABTO_DEVICE_LOG_WARN) {
+        ESP_LOGW(LOGM, "%s", msg->message);
+    } else if (msg->severity == NABTO_DEVICE_LOG_INFO) {
+        ESP_LOGI(LOGM, "%s", msg->message);
+    } else if (msg->severity == NABTO_DEVICE_LOG_TRACE) {
+        ESP_LOGV(LOGM, "%s", msg->message);
+    }
 }
 
 
 
+
+
 /**
- * Hagroy example
+ * Audio demo example
  */
 void app_main(void)
 {
-    ESP_ERROR_CHECK(nvs_flash_init());
-    ESP_ERROR_CHECK(esp_netif_init());
-    ESP_ERROR_CHECK(esp_event_loop_create_default());
+    
+    // Initialize NVS
+    esp_err_t ret = nvs_flash_init();
+    if (ret == ESP_ERR_NVS_NO_FREE_PAGES ||
+        ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
+        ESP_ERROR_CHECK(nvs_flash_erase());
+        ret = nvs_flash_init();
+    }
+    ESP_ERROR_CHECK(ret);
 
-    /* This helper function configures Wi-Fi or Ethernet, as selected in menuconfig.
-     * Read "Establishing Wi-Fi or Ethernet Connection" section in
-     * examples/protocols/README.md for more information about this function.
-     */
-    ESP_ERROR_CHECK(example_connect());
-
-    esp_log_level_set("*", ESP_LOG_WARN);
-    esp_log_level_set(TAG, ESP_LOG_DEBUG);
+    nabto_esp32_example_init_wifi();
 
 
-    //setup_i2s_pins();
+    nvs_handle_t nvsHandle;
+    ret = nvs_open("nabto", NVS_READWRITE, &nvsHandle);
+    ESP_ERROR_CHECK(ret);
 
+    NabtoDevice* dev = nabto_device_new();
+    CHECK_NULL(dev);
+
+    nabto_device_set_log_callback(dev, logCallback, NULL);
+    CHECK_NABTO_ERR(nabto_device_set_log_level(dev, "trace"));
+
+    CHECK_NABTO_ERR(nabto_esp32_example_set_id_and_key(dev));
+
+    CHECK_NABTO_ERR(nabto_device_enable_mdns(dev));
+    CHECK_NABTO_ERR(nabto_device_mdns_add_subtype(dev, "tcptunnel"));
+    CHECK_NABTO_ERR(nabto_device_mdns_add_txt_item(dev, "fn", "tcptunnel"));
+
+    CHECK_NABTO_ERR(nabto_device_set_app_name(dev, "Tcp Tunnel"));
+
+    struct nn_log logger;
+    nabto_esp32_util_nn_log_init(&logger);
+
+    struct nabto_esp32_iam iam;
+
+    struct nm_iam_state* defaultIamState = tcptunnel_create_default_iam_state(dev);
+    struct nm_iam_configuration* iamConfig = tcptunnel_create_iam_config();
+
+    nabto_esp32_iam_init(&iam, dev, iamConfig, defaultIamState, nvsHandle);
+
+    CHECK_NABTO_ERR(nabto_device_add_tcp_tunnel_service(dev, "audio-pcm", "audio-pcm", "127.0.0.1", 8000));
+
+    CHECK_NABTO_ERR(nabto_device_limit_connections(dev, 3));
+    CHECK_NABTO_ERR(nabto_device_limit_stream_segments(dev, 200));
+
+    NabtoDeviceFuture* future = nabto_device_future_new(dev);
+    CHECK_NULL(future);
+
+    nabto_device_start(dev, future);
+    CHECK_NABTO_ERR(nabto_device_future_wait(future));
+    nabto_device_future_free(future);
+
+    char* fingerprint = NULL;
+    CHECK_NABTO_ERR(nabto_device_get_device_fingerprint(dev, &fingerprint));
+
+    ESP_LOGI(TAG, "Started nabto device with fingerprint %s", fingerprint);
+    nabto_device_string_free(fingerprint);
+
+    struct device_event_handler eh;
+    device_event_handler_init(&eh, dev);
+
+    struct connection_event_handler ceh;
+    connection_event_handler_init(&ceh, dev);
+
+    
+    //esp_log_level_set("*", ESP_LOG_VERBOSE);
+    esp_log_level_set(TAG, ESP_LOG_VERBOSE);
+    esp_log_level_set("TCP_SERVER_STREAM", ESP_LOG_DEBUG);
+    esp_log_level_set(LOGM, ESP_LOG_DEBUG);
+    
+    
     char addr_str[128];
     int addr_family = AF_INET;
     int ip_protocol = 0;
@@ -114,7 +178,8 @@ void app_main(void)
     
     if (addr_family == AF_INET) {
         struct sockaddr_in *dest_addr_ip4 = (struct sockaddr_in *)&dest_addr;
-        dest_addr_ip4->sin_addr.s_addr = htonl(INADDR_ANY);
+        dest_addr_ip4->sin_addr.s_addr = inet_addr("127.0.0.1");
+        //dest_addr_ip4->sin_addr.s_addr = htonl(INADDR_ANY);
         dest_addr_ip4->sin_family = AF_INET;
         dest_addr_ip4->sin_port = htons(CONFIG_TCP_SERVER_PORT);
         ip_protocol = IPPROTO_IP;
@@ -126,6 +191,8 @@ void app_main(void)
     }
     int opt = 1;
     setsockopt(listen_sock, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
+
+
     
     ESP_LOGI(TAG, "Socket created");
     
@@ -137,7 +204,6 @@ void app_main(void)
     }
     ESP_LOGI(TAG, "Socket bound, port %d", CONFIG_TCP_SERVER_PORT);
 
-    //_dispatch_event(self, tcp, NULL, 0, TCP_SERVER_STREAM_STATE_CONNECTED);
     
     err = listen(listen_sock, 1);
     if (err != 0) {
@@ -146,11 +212,12 @@ void app_main(void)
     }
 
 
-
+    
+    
     ESP_LOGI(TAG, "Socket listening");
 
-    while(1) {
-    
+    while(true) {
+        
         struct sockaddr_storage source_addr; // Large enough for both IPv4 or IPv6
         socklen_t addr_len = sizeof(source_addr);
         int sock = accept(listen_sock, (struct sockaddr *)&source_addr, &addr_len);
@@ -184,11 +251,11 @@ void app_main(void)
         
         ESP_LOGI(TAG, "[ 1 ] Start codec chip");
         audio_board_handle_t board_handle = audio_board_init();
-        //audio_hal_ctrl_codec(board_handle->audio_hal, AUDIO_HAL_CODEC_MODE_ENCODE, AUDIO_HAL_CTRL_START);
         audio_hal_ctrl_codec(board_handle->audio_hal, AUDIO_HAL_CODEC_MODE_BOTH, AUDIO_HAL_CTRL_START);
 
+
         // Set volume
-        audio_hal_set_volume(board_handle->audio_hal, 50); // Set volume to 50% (range is 0-100)
+        audio_hal_set_volume(board_handle->audio_hal, 99); // Set volume  (range is 0-100)
 
         
         ESP_LOGI(TAG, "[2.0] Create audio pipeline for playback");
@@ -204,23 +271,43 @@ void app_main(void)
         ESP_LOGI(TAG, "[2.1] Create i2s stream to write data to codec chip");
         i2s_stream_cfg_t read_i2s_cfg = I2S_STREAM_CFG_DEFAULT();
         read_i2s_cfg.type = AUDIO_STREAM_WRITER;
-        i2s_stream_reader = i2s_stream_init(&read_i2s_cfg);
-        ESP_LOGI(TAG, "her1");
-        AUDIO_NULL_CHECK(TAG, i2s_stream_reader, return);
-        ESP_LOGI(TAG, "her2");
-        i2s_stream_set_clk(i2s_stream_reader, 16000, 16, 2);
-        ESP_LOGI(TAG, "her3");
+        //i2s_stream_cfg_t read_i2s_cfg = I2S_STREAM_CFG_DEFAULT_WITH_PARA(CODEC_ADC_I2S_PORT, 16000, 8, AUDIO_STREAM_WRITER);
+        //read_i2s_cfg.std_cfg.slot_cfg.slot_mask = I2S_STD_SLOT_LEFT;
 
+        //read_i2s_cfg.chan_cfg.dma_desc_num = 8;
+        //read_i2s_cfg.chan_cfg.dma_frame_num = 1024; // Increase buffer length
+        //read_i2s_cfg.out_rb_size = 32 * 1024; // Increase buffer to avoid missing data in bad network conditions
+        
+        i2s_stream_reader = i2s_stream_init(&read_i2s_cfg);
+        AUDIO_NULL_CHECK(TAG, i2s_stream_reader, return);
+
+        //i2s_stream_set_clk(i2s_stream_reader, 16000, 16, 2);
+        //read_i2s_cfg.volume=30;
+
+
+        rsp_filter_cfg_t rsp_cfg = DEFAULT_RESAMPLE_FILTER_CONFIG();
+        rsp_cfg.src_rate = 8000;
+        rsp_cfg.src_ch = 1;
+        rsp_cfg.dest_rate = 16000;
+        rsp_cfg.dest_ch = 2;
+        rsp_cfg.mode = RESAMPLE_DECODE_MODE;
+        rsp_cfg.complexity = 0;
+        audio_element_handle_t filter = rsp_filter_init(&rsp_cfg);
+        
         
         ESP_LOGI(TAG, "[2.2] Create wav decoder to decode wav file/stream");
         wav_decoder_cfg_t wav_decoder_cfg = DEFAULT_WAV_DECODER_CONFIG();
+        wav_decoder_cfg.out_rb_size = 20*1024;
+        
         wav_decoder = wav_decoder_init(&wav_decoder_cfg);
         AUDIO_NULL_CHECK(TAG, wav_decoder, return);
-
+        
         ESP_LOGI(TAG, "[2.2] Create tcp server stream to write data");
         tcp_server_stream_cfg_t read_tcp_cfg = TCP_SERVER_STREAM_CFG_DEFAULT();
         read_tcp_cfg.type = AUDIO_STREAM_READER;
         read_tcp_cfg.connect_sock = sock;
+
+        
         tcp_stream_reader = tcp_server_stream_init(&read_tcp_cfg);
         AUDIO_NULL_CHECK(TAG, tcp_stream_reader, return);
 
@@ -228,25 +315,28 @@ void app_main(void)
         ESP_LOGI(TAG, "[2.3] Register all elements to audio pipeline");
         audio_pipeline_register(read_pipeline, tcp_stream_reader, "tcp");
         audio_pipeline_register(read_pipeline, wav_decoder, "wav_decode");
+        //audio_pipeline_register(read_pipeline, pcm_decoder, "pcm_decode");
+        //audio_pipeline_register(read_pipeline, filter, "resample_1");
         audio_pipeline_register(read_pipeline, i2s_stream_reader, "i2s");
         
         ESP_LOGI(TAG, "[2.4] Link it together tcp-->wav_decode-->i2s");
         audio_pipeline_link(read_pipeline, (const char *[]) {"tcp", "wav_decode", "i2s"}, 3);
+        //audio_pipeline_link(read_pipeline, (const char *[]) {"tcp", "wav_decode", "resample_1", "i2s"}, 4);
         
         
         // Second the writer pipepline, ie. read from the microphone and forward to socket
         
         ESP_LOGI(TAG, "[2.1b] Create i2s stream to read data to codec chip");
-        //i2s_stream_cfg_t write_i2s_cfg = I2S_STREAM_CFG_DEFAULT();
-        i2s_stream_cfg_t write_i2s_cfg = I2S_STREAM_CFG_DEFAULT_WITH_PARA(CODEC_ADC_I2S_PORT, 16000, 16, AUDIO_STREAM_READER);
-        write_i2s_cfg.i2s_config.mode=(i2s_mode_t)(I2S_MODE_MASTER |  I2S_MODE_RX);
+        //i2s_stream_cfg_t write_i2s_cfg = I2S_STREAM_CFG_DEFAULT_WITH_PARA(CODEC_ADC_I2S_PORT, 16000, 16, AUDIO_STREAM_READER);
+        i2s_stream_cfg_t write_i2s_cfg = I2S_STREAM_CFG_DEFAULT();
+
         
-        write_i2s_cfg.out_rb_size = 16 * 1024; // Increase buffer to avoid missing data in bad network conditions
+        write_i2s_cfg.volume=100;
+        //write_i2s_cfg.out_rb_size = 32 * 1024; // Increase buffer to avoid missing data in bad network conditions
 
         
         write_i2s_cfg.type = AUDIO_STREAM_READER;
         i2s_stream_writer = i2s_stream_init(&write_i2s_cfg);
-        ESP_LOGI(TAG, "her1");
         AUDIO_NULL_CHECK(TAG, i2s_stream_writer, return);
         i2s_stream_set_clk(i2s_stream_writer, 16000, 16, 2);
 
@@ -269,7 +359,7 @@ void app_main(void)
 
 
         // Start the pipelines
-        audio_pipeline_run(write_pipeline);
+        //audio_pipeline_run(write_pipeline);
         audio_pipeline_run(read_pipeline);
 
 
@@ -280,7 +370,7 @@ void app_main(void)
         audio_event_iface_handle_t evt = audio_event_iface_init(&evt_cfg);
         
         ESP_LOGI(TAG, "[4.1] Listening event from all elements of pipeline");
-        //audio_pipeline_set_listener(read_pipeline, evt);
+        audio_pipeline_set_listener(read_pipeline, evt);
         audio_pipeline_set_listener(write_pipeline, evt);
         
         
@@ -345,8 +435,5 @@ void app_main(void)
   _exit:
     close(listen_sock);
 
-        
-    
-    //xTaskCreate(tcp_server_task, "tcp_server", 4096, (void*)AF_INET, 5, NULL);
 
 }

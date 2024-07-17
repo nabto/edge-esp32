@@ -143,9 +143,9 @@ void rtsp_server(void*)
     TaskHandle_t xHandle = NULL;
 
     // Camera board configuration
-    //camera_config_t config = espeye_config;
+    camera_config_t config = espeye_config;
     //camera_config_t config = esp32cam_config; // NOT TESTED
-    camera_config_t config = esp32cam_aithinker_config;
+    //camera_config_t config = esp32cam_aithinker_config;
 
     config.frame_size = CAM_FRAMESIZE;
     config.jpeg_quality = CAM_QUALITY;
