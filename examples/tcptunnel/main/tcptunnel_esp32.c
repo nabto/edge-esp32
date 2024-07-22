@@ -16,6 +16,7 @@
 
 #include "nabto_esp32_util.h"
 #include "simple_webserver.h"
+#include "simple_perf.h"
 
 static const char* TAG = "TcpTunnel";
 
@@ -87,9 +88,13 @@ void app_main(void)
 
     nabto_esp32_iam_init(&iam, dev, iamConfig, defaultIamState, nvsHandle);
 
-    httpd_handle_t webserver = start_webserver(&logger);
+    //httpd_handle_t webserver = 
+    start_webserver(&logger);
+    xTaskCreate(&perf_task, "perf_task", 4096, NULL, 5, NULL);
+
 
     CHECK_NABTO_ERR(nabto_device_add_tcp_tunnel_service(dev, "http", "http", "127.0.0.1", 80));
+    CHECK_NABTO_ERR(nabto_device_add_tcp_tunnel_service(dev, "perf", "perf", "127.0.0.1", 9000));
 
     CHECK_NABTO_ERR(nabto_device_limit_connections(dev, 2));
     CHECK_NABTO_ERR(nabto_device_limit_stream_segments(dev, 80));
