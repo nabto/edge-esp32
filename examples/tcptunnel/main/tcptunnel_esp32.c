@@ -18,7 +18,8 @@
 #include "simple_webserver.h"
 #include "simple_perf.h"
 
-#include "print_stats.h"
+// This does not work in ESP IDF 5.0
+// #include "print_stats.h"
 
 static const char* TAG = "TcpTunnel";
 
@@ -93,6 +94,7 @@ void app_main(void)
 
     //httpd_handle_t webserver =
     start_webserver(&logger);
+    // On the ESP32 without extra ram the perf server cannot coexists with the webserver.
     xTaskCreate(&perf_task, "perf_task", 4096, NULL, 5, NULL);
 
 
