@@ -18,6 +18,9 @@
 #include "simple_webserver.h"
 #include "simple_perf.h"
 
+// This does not work in ESP IDF 5.0
+// #include "print_stats.h"
+
 static const char* TAG = "TcpTunnel";
 
 #define CHECK_NABTO_ERR(err) do { if (err != NABTO_DEVICE_EC_OK) { ESP_LOGE(TAG, "Unexpected error at %s:%d, %s", __FILE__, __LINE__, nabto_device_error_get_message(err) ); esp_restart(); } } while (0)
@@ -42,7 +45,6 @@ void logCallback(NabtoDeviceLogMessage* msg, void* data)
     }
 }
 
-
 void app_main(void)
 {
     // Initialize NVS
@@ -59,6 +61,8 @@ void app_main(void)
     nvs_handle_t nvsHandle;
     ret = nvs_open("nabto", NVS_READWRITE, &nvsHandle);
     ESP_ERROR_CHECK(ret);
+
+    //xTaskCreatePinnedToCore(stats_task, "stats", 4096, NULL, STATS_TASK_PRIO, NULL, tskNO_AFFINITY);
 
     NabtoDevice* dev = nabto_device_new();
     CHECK_NULL(dev);
@@ -88,8 +92,9 @@ void app_main(void)
 
     nabto_esp32_iam_init(&iam, dev, iamConfig, defaultIamState, nvsHandle);
 
-    //httpd_handle_t webserver = 
+    //httpd_handle_t webserver =
     start_webserver(&logger);
+    // On the ESP32 without extra ram the perf server cannot coexists with the webserver.
     xTaskCreate(&perf_task, "perf_task", 4096, NULL, 5, NULL);
 
 
