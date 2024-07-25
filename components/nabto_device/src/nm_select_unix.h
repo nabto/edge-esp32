@@ -70,6 +70,11 @@ struct nm_select_unix {
 
     pthread_t thread;
     bool stopped;
+
+    // This is a socket pair which is used to break out of the the select loop.
+    int notifySendSocket;
+    int notifyRecvSocket;
+    uint16_t notifyPort;
 };
 
 /**
@@ -86,6 +91,14 @@ void nm_select_unix_stop(struct nm_select_unix* ctx);
  */
 
 // notify select that something has changed in the filedescriptor sets
+
+bool nm_select_unix_notify_init(struct nm_select_unix* ctx);
+void nm_select_unix_notify_deinit(struct nm_select_unix* ctx);
+bool nm_select_unix_notify_alloc_sockets(struct nm_select_unix* ctx);
+bool nm_select_unix_notify_bind_recv_socket(struct nm_select_unix* ctx);
+void nm_select_unix_notify_read_from_socket(struct nm_select_unix* ctx);
+bool nm_select_unix_notify_set_nonblocking(int fd);
+
 void nm_select_unix_notify(struct nm_select_unix* ctx);
 
 /**
