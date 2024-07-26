@@ -97,7 +97,6 @@ void app_main(void)
     start_webserver(&logger);
     CHECK_NABTO_ERR(nabto_device_add_tcp_tunnel_service(dev, "http", "http", "127.0.0.1", 80));
 
-    // On the ESP32 without extra ram the perf server cannot coexists with the webserver.
     //xTaskCreate(&perf_task, "perf_task", 4096, NULL, 5, NULL);
     //CHECK_NABTO_ERR(nabto_device_add_tcp_tunnel_service(dev, "perf", "perf", "127.0.0.1", 9000));
 
