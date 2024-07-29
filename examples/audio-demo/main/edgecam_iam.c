@@ -15,7 +15,8 @@ struct nm_iam_state* tcptunnel_create_default_iam_state(NabtoDevice* device)
     nm_iam_state_set_open_pairing_role(state, "Administrator");
     nm_iam_state_set_local_initial_pairing(state, false);
     nm_iam_state_set_local_open_pairing(state, true);
-    nm_iam_state_set_password_open_password(state, random_password(12));
+    nm_iam_state_set_password_open_password(state, "pairpsw");
+    printf("nu har jeg sat password\n");
     nm_iam_state_set_password_open_pairing(state, true);
     char* sct = NULL;
     nabto_device_create_server_connect_token(device, &sct);
@@ -58,6 +59,14 @@ struct nm_iam_configuration* tcptunnel_create_iam_config()
         nm_iam_configuration_statement_add_action(s, "IAM:SetSettings");
         nm_iam_configuration_statement_add_action(s, "IAM:GetSettings");
 
+        // not from esp-eye demo
+        /*
+        nm_iam_configuration_statement_add_action(s, "IAM:CreateUser");
+        nm_iam_configuration_statement_add_action(s, "IAM:SetUserPassword");
+        nm_iam_configuration_statement_add_action(s, "IAM:SetUserDisplayName");
+        nm_iam_configuration_statement_add_action(s, "IAM:SetDeviceInfo");
+        */
+        
         nm_iam_configuration_add_policy(conf, p);
     }
 
