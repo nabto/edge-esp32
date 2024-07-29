@@ -92,14 +92,14 @@ void app_main(void)
 
     nabto_esp32_iam_init(&iam, dev, iamConfig, defaultIamState, nvsHandle);
 
-    //httpd_handle_t webserver =
+    // Either the webserver or the perf server can be enabled but not both at the same time, the reason is currently not known.
+
     start_webserver(&logger);
-    // On the ESP32 without extra ram the perf server cannot coexists with the webserver.
-    xTaskCreate(&perf_task, "perf_task", 4096, NULL, 5, NULL);
-
-
     CHECK_NABTO_ERR(nabto_device_add_tcp_tunnel_service(dev, "http", "http", "127.0.0.1", 80));
-    CHECK_NABTO_ERR(nabto_device_add_tcp_tunnel_service(dev, "perf", "perf", "127.0.0.1", 9000));
+
+    //xTaskCreate(&perf_task, "perf_task", 4096, NULL, 5, NULL);
+    //CHECK_NABTO_ERR(nabto_device_add_tcp_tunnel_service(dev, "perf", "perf", "127.0.0.1", 9000));
+
 
     CHECK_NABTO_ERR(nabto_device_limit_connections(dev, 2));
     CHECK_NABTO_ERR(nabto_device_limit_stream_segments(dev, 80));
