@@ -32,19 +32,6 @@ config EXAMPLE_WIFI_PASSWORD
 
 
 
-
-config TCP_SERVER_URL
-    string "TCP URL"
-    default "192.168.4.1"
-        help
-               Adress to use 
-
-config TCP_SERVER_PORT
-    int "TCP PORT"
-    default "8000"
-        help
-               Port to use
-
 config TCP_SERVER_KEEPALIVE_IDLE
     int "TCP keep-alive idle time(s)"
     default 5

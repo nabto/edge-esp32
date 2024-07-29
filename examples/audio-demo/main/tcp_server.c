@@ -56,14 +56,9 @@
 
 
 
-/*
-#define PORT                        CONFIG_EXAMPLE_PORT
-#define KEEPALIVE_IDLE              CONFIG_EXAMPLE_KEEPALIVE_IDLE
-#define KEEPALIVE_INTERVAL          CONFIG_EXAMPLE_KEEPALIVE_INTERVAL
-#define KEEPALIVE_COUNT             CONFIG_EXAMPLE_KEEPALIVE_COUNT
-*/
-
 static const char *TAG = "TCP_SERVER_STREAM_EXAMPLE";
+
+const char* sct = "demosct";
 
 
 
@@ -95,6 +90,8 @@ void logCallback(NabtoDeviceLogMessage* msg, void* data)
  */
 void app_main(void)
 {
+
+
     
     // Initialize NVS
     esp_err_t ret = nvs_flash_init();
@@ -105,6 +102,7 @@ void app_main(void)
     }
     ESP_ERROR_CHECK(ret);
 
+    
     nabto_esp32_example_init_wifi();
 
 
@@ -126,6 +124,8 @@ void app_main(void)
 
     CHECK_NABTO_ERR(nabto_device_set_app_name(dev, "Tcp Tunnel"));
 
+    CHECK_NABTO_ERR(nabto_device_add_server_connect_token(dev, sct));
+    
     struct nn_log logger;
     nabto_esp32_util_nn_log_init(&logger);
 
@@ -154,6 +154,9 @@ void app_main(void)
     ESP_LOGI(TAG, "Started nabto device with fingerprint %s", fingerprint);
     nabto_device_string_free(fingerprint);
 
+    ESP_LOGI(TAG, "Pairring string: p=%s,d=%s,pwd=%s,sct=%s", CONFIG_EXAMPLE_NABTO_PRODUCT_ID,CONFIG_EXAMPLE_NABTO_DEVICE_ID, "pairpsw", sct);
+
+    
     struct device_event_handler eh;
     device_event_handler_init(&eh, dev);
 
@@ -161,7 +164,7 @@ void app_main(void)
     connection_event_handler_init(&ceh, dev);
 
     
-    //esp_log_level_set("*", ESP_LOG_VERBOSE);
+    esp_log_level_set("*", ESP_LOG_VERBOSE);
     esp_log_level_set(TAG, ESP_LOG_VERBOSE);
     esp_log_level_set("TCP_SERVER_STREAM", ESP_LOG_DEBUG);
     esp_log_level_set(LOGM, ESP_LOG_DEBUG);
@@ -178,10 +181,10 @@ void app_main(void)
     
     if (addr_family == AF_INET) {
         struct sockaddr_in *dest_addr_ip4 = (struct sockaddr_in *)&dest_addr;
-        dest_addr_ip4->sin_addr.s_addr = inet_addr("127.0.0.1");
-        //dest_addr_ip4->sin_addr.s_addr = htonl(INADDR_ANY);
+        //dest_addr_ip4->sin_addr.s_addr = inet_addr("127.0.0.1");
+        dest_addr_ip4->sin_addr.s_addr = htonl(INADDR_ANY);
         dest_addr_ip4->sin_family = AF_INET;
-        dest_addr_ip4->sin_port = htons(CONFIG_TCP_SERVER_PORT);
+        dest_addr_ip4->sin_port = htons(8000);
         ip_protocol = IPPROTO_IP;
     }
     int listen_sock = socket(addr_family, SOCK_STREAM, ip_protocol);
@@ -192,7 +195,6 @@ void app_main(void)
     int opt = 1;
     setsockopt(listen_sock, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
 
-
     
     ESP_LOGI(TAG, "Socket created");
     
@@ -202,7 +204,7 @@ void app_main(void)
         ESP_LOGE(TAG, "IPPROTO: %d", addr_family);
         goto _exit;
     }
-    ESP_LOGI(TAG, "Socket bound, port %d", CONFIG_TCP_SERVER_PORT);
+    ESP_LOGI(TAG, "Socket bound, port %d", 8000);
 
     
     err = listen(listen_sock, 1);
@@ -271,9 +273,10 @@ void app_main(void)
         ESP_LOGI(TAG, "[2.1] Create i2s stream to write data to codec chip");
         i2s_stream_cfg_t read_i2s_cfg = I2S_STREAM_CFG_DEFAULT();
         read_i2s_cfg.type = AUDIO_STREAM_WRITER;
-        //i2s_stream_cfg_t read_i2s_cfg = I2S_STREAM_CFG_DEFAULT_WITH_PARA(CODEC_ADC_I2S_PORT, 16000, 8, AUDIO_STREAM_WRITER);
-        //read_i2s_cfg.std_cfg.slot_cfg.slot_mask = I2S_STD_SLOT_LEFT;
 
+        // Something we have tested:
+        //i2s_stream_cfg_t read_i2s_cfg = I2S_STREAM_CFG_DEFAULT_WITH_PARA(CODEC_ADC_I2S_PORT, 8000, 16, AUDIO_STREAM_WRITER);
+        //read_i2s_cfg.std_cfg.slot_cfg.slot_mask = I2S_STD_SLOT_LEFT;
         //read_i2s_cfg.chan_cfg.dma_desc_num = 8;
         //read_i2s_cfg.chan_cfg.dma_frame_num = 1024; // Increase buffer length
         //read_i2s_cfg.out_rb_size = 32 * 1024; // Increase buffer to avoid missing data in bad network conditions
@@ -281,12 +284,15 @@ void app_main(void)
         i2s_stream_reader = i2s_stream_init(&read_i2s_cfg);
         AUDIO_NULL_CHECK(TAG, i2s_stream_reader, return);
 
-        //i2s_stream_set_clk(i2s_stream_reader, 16000, 16, 2);
-        //read_i2s_cfg.volume=30;
+        // 16000hz 16bit 2 channels
+        i2s_stream_set_clk(i2s_stream_reader, 16000, 16, 2);
 
-
+        //
+        // Create upsample filter ie. 8000hz 16bit mono -> 16000hz 16bit stereo
+        // raw i2s cannot handle mono and 8000 .. very poor document 
+        //
         rsp_filter_cfg_t rsp_cfg = DEFAULT_RESAMPLE_FILTER_CONFIG();
-        rsp_cfg.src_rate = 8000;
+        rsp_cfg.src_rate = 16000;
         rsp_cfg.src_ch = 1;
         rsp_cfg.dest_rate = 16000;
         rsp_cfg.dest_ch = 2;
@@ -294,15 +300,17 @@ void app_main(void)
         rsp_cfg.complexity = 0;
         audio_element_handle_t filter = rsp_filter_init(&rsp_cfg);
         
-        
+
+        // Create wav decoder
         ESP_LOGI(TAG, "[2.2] Create wav decoder to decode wav file/stream");
         wav_decoder_cfg_t wav_decoder_cfg = DEFAULT_WAV_DECODER_CONFIG();
         wav_decoder_cfg.out_rb_size = 20*1024;
         
         wav_decoder = wav_decoder_init(&wav_decoder_cfg);
         AUDIO_NULL_CHECK(TAG, wav_decoder, return);
-        
-        ESP_LOGI(TAG, "[2.2] Create tcp server stream to write data");
+
+        // Create tcp endpoint
+        ESP_LOGI(TAG, "[2.2] Create tcp server stream to read data from");
         tcp_server_stream_cfg_t read_tcp_cfg = TCP_SERVER_STREAM_CFG_DEFAULT();
         read_tcp_cfg.type = AUDIO_STREAM_READER;
         read_tcp_cfg.connect_sock = sock;
@@ -315,21 +323,24 @@ void app_main(void)
         ESP_LOGI(TAG, "[2.3] Register all elements to audio pipeline");
         audio_pipeline_register(read_pipeline, tcp_stream_reader, "tcp");
         audio_pipeline_register(read_pipeline, wav_decoder, "wav_decode");
-        //audio_pipeline_register(read_pipeline, pcm_decoder, "pcm_decode");
-        //audio_pipeline_register(read_pipeline, filter, "resample_1");
+        audio_pipeline_register(read_pipeline, filter, "upsample");
         audio_pipeline_register(read_pipeline, i2s_stream_reader, "i2s");
         
-        ESP_LOGI(TAG, "[2.4] Link it together tcp-->wav_decode-->i2s");
-        audio_pipeline_link(read_pipeline, (const char *[]) {"tcp", "wav_decode", "i2s"}, 3);
-        //audio_pipeline_link(read_pipeline, (const char *[]) {"tcp", "wav_decode", "resample_1", "i2s"}, 4);
-        
+        ESP_LOGI(TAG, "[2.4] Link it together tcp-->wav_decode-->upsample->i2s");
+        //audio_pipeline_link(read_pipeline, (const char *[]) {"tcp", "wav_decode", "upsample", "i2s"}, 4);
+        audio_pipeline_link(read_pipeline, (const char *[]) {"tcp", "upsample", "i2s"}, 3);
+
         
         // Second the writer pipepline, ie. read from the microphone and forward to socket
         
         ESP_LOGI(TAG, "[2.1b] Create i2s stream to read data to codec chip");
-        //i2s_stream_cfg_t write_i2s_cfg = I2S_STREAM_CFG_DEFAULT_WITH_PARA(CODEC_ADC_I2S_PORT, 16000, 16, AUDIO_STREAM_READER);
-        i2s_stream_cfg_t write_i2s_cfg = I2S_STREAM_CFG_DEFAULT();
+        i2s_stream_cfg_t write_i2s_cfg = I2S_STREAM_CFG_DEFAULT_WITH_PARA(CODEC_ADC_I2S_PORT, 8000, 16, AUDIO_STREAM_READER);
 
+        
+        write_i2s_cfg.std_cfg.slot_cfg.slot_mode=1;
+        write_i2s_cfg.std_cfg.slot_cfg.slot_mask=I2S_STD_SLOT_RIGHT;
+
+        //i2s_stream_cfg_t write_i2s_cfg = I2S_STREAM_CFG_DEFAULT();
         
         write_i2s_cfg.volume=100;
         //write_i2s_cfg.out_rb_size = 32 * 1024; // Increase buffer to avoid missing data in bad network conditions
@@ -337,8 +348,23 @@ void app_main(void)
         
         write_i2s_cfg.type = AUDIO_STREAM_READER;
         i2s_stream_writer = i2s_stream_init(&write_i2s_cfg);
+
         AUDIO_NULL_CHECK(TAG, i2s_stream_writer, return);
-        i2s_stream_set_clk(i2s_stream_writer, 16000, 16, 2);
+        //i2s_stream_set_clk(i2s_stream_writer, 16000, 16, 1);
+
+
+        //
+        // Create downsample filter : 16000hz 16bit steroe -> 8000hz 16bit mono
+        // raw i2s cannot handle mono and 8000 .. very poor documentation 
+        //
+        rsp_filter_cfg_t rsp_cfg_in = DEFAULT_RESAMPLE_FILTER_CONFIG();
+        rsp_cfg_in.src_rate = 16000;
+        rsp_cfg_in.src_ch = 2;
+        rsp_cfg_in.dest_rate = 8000;
+        rsp_cfg_in.dest_ch = 1;
+        rsp_cfg_in.mode = RESAMPLE_DECODE_MODE;
+        rsp_cfg_in.complexity = 1;
+        audio_element_handle_t filter_in = rsp_filter_init(&rsp_cfg_in);
 
         
         ESP_LOGI(TAG, "[2.1c] Create tcp server stream to write data");
@@ -351,15 +377,17 @@ void app_main(void)
         ESP_LOGI(TAG, "[2.2c] Register all elements to audio pipeline");
         audio_pipeline_register(write_pipeline, tcp_stream_writer, "tcp");
         audio_pipeline_register(write_pipeline, i2s_stream_writer, "i2s");
+        audio_pipeline_register(write_pipeline, filter_in, "downsample");
         
-        ESP_LOGI(TAG, "[2.3c] Link it together i2s-->wav_encode-->tcp");
+        ESP_LOGI(TAG, "[2.3c] Link it together i2s-->downsample-->tcp");
+        //audio_pipeline_link(write_pipeline, (const char *[]) {"i2s", "downsample", "tcp"}, 3);
         audio_pipeline_link(write_pipeline, (const char *[]) {"i2s", "tcp"}, 2);
                 
         ESP_LOGI(TAG, "[ 3 ] Start pipelines");
 
 
         // Start the pipelines
-        //audio_pipeline_run(write_pipeline);
+        audio_pipeline_run(write_pipeline);
         audio_pipeline_run(read_pipeline);
 
 
