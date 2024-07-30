@@ -44,201 +44,81 @@
 // This component setup
 #include "tcp_server_stream.h"
 
-// Nabto stuff
-#include <nabto/nabto_device.h>
-#include "nabto_esp32_example.h"
-#include "nabto_esp32_iam.h"
-#include "edgecam_iam.h"
-#include "device_event_handler.h"
-#include "connection_event_handler.h"
-//#include "esp32_perfmon.h"
-#include "nabto_esp32_util.h"
 
 
+static const char *TAG = "AUDIO_SERVER";
 
-static const char *TAG = "TCP_SERVER_STREAM_EXAMPLE";
-
-const char* sct = "demosct";
-
-
-
-#define CHECK_NABTO_ERR(err) do { if (err != NABTO_DEVICE_EC_OK) { ESP_LOGE(LOGM, "Unexpected error at %s:%d, %s", __FILE__, __LINE__, nabto_device_error_get_message(err) ); printf("ERROR!!!\n"); esp_restart(); } } while (0)
-#define CHECK_NULL(ptr) do { if (ptr == NULL) { ESP_LOGE(LOGM, "Unexpected out of memory at %s:%d", __FILE__, __LINE__); printf("MEMORY-ERROR\n"); esp_restart(); } } while (0)
-
-
-static const char* LOGM = "nabto";
-void logCallback(NabtoDeviceLogMessage* msg, void* data)
-{
-    //ESP_LOGI(LOGM, "%s", msg->message);
-    if (msg->severity == NABTO_DEVICE_LOG_ERROR) {
-        ESP_LOGE(LOGM, "%s", msg->message);
-    } else if (msg->severity == NABTO_DEVICE_LOG_WARN) {
-        ESP_LOGW(LOGM, "%s", msg->message);
-    } else if (msg->severity == NABTO_DEVICE_LOG_INFO) {
-        ESP_LOGI(LOGM, "%s", msg->message);
-    } else if (msg->severity == NABTO_DEVICE_LOG_TRACE) {
-        ESP_LOGV(LOGM, "%s", msg->message);
-    }
-}
-
-
-
-
-
-/**
- * Audio demo example
+/*
+ * The audio server
+ * Basicly just listen in on incomming connections
+ * Once an incomming connection is accepted it is used to set up two audio pipelines
+ * one pipeline is reading from the socket and pushing the data to the audio I2S out
+ * another pipeline is reading from I2S and pushing the data to the socket 
  */
-void app_main(void)
-{
+void audio_server(void*) {
 
-
-    
-    // Initialize NVS
-    esp_err_t ret = nvs_flash_init();
-    if (ret == ESP_ERR_NVS_NO_FREE_PAGES ||
-        ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
-        ESP_ERROR_CHECK(nvs_flash_erase());
-        ret = nvs_flash_init();
-    }
-    ESP_ERROR_CHECK(ret);
-
-    
-    nabto_esp32_example_init_wifi();
-
-
-    nvs_handle_t nvsHandle;
-    ret = nvs_open("nabto", NVS_READWRITE, &nvsHandle);
-    ESP_ERROR_CHECK(ret);
-
-    NabtoDevice* dev = nabto_device_new();
-    CHECK_NULL(dev);
-
-    nabto_device_set_log_callback(dev, logCallback, NULL);
-    CHECK_NABTO_ERR(nabto_device_set_log_level(dev, "trace"));
-
-    CHECK_NABTO_ERR(nabto_esp32_example_set_id_and_key(dev));
-
-    CHECK_NABTO_ERR(nabto_device_enable_mdns(dev));
-    CHECK_NABTO_ERR(nabto_device_mdns_add_subtype(dev, "tcptunnel"));
-    CHECK_NABTO_ERR(nabto_device_mdns_add_txt_item(dev, "fn", "tcptunnel"));
-
-    CHECK_NABTO_ERR(nabto_device_set_app_name(dev, "Tcp Tunnel"));
-
-    CHECK_NABTO_ERR(nabto_device_add_server_connect_token(dev, sct));
-    
-    struct nn_log logger;
-    nabto_esp32_util_nn_log_init(&logger);
-
-    struct nabto_esp32_iam iam;
-
-    struct nm_iam_state* defaultIamState = tcptunnel_create_default_iam_state(dev);
-    struct nm_iam_configuration* iamConfig = tcptunnel_create_iam_config();
-
-    nabto_esp32_iam_init(&iam, dev, iamConfig, defaultIamState, nvsHandle);
-
-    CHECK_NABTO_ERR(nabto_device_add_tcp_tunnel_service(dev, "audio-pcm", "audio-pcm", "127.0.0.1", 8000));
-
-    CHECK_NABTO_ERR(nabto_device_limit_connections(dev, 3));
-    CHECK_NABTO_ERR(nabto_device_limit_stream_segments(dev, 200));
-
-    NabtoDeviceFuture* future = nabto_device_future_new(dev);
-    CHECK_NULL(future);
-
-    nabto_device_start(dev, future);
-    CHECK_NABTO_ERR(nabto_device_future_wait(future));
-    nabto_device_future_free(future);
-
-    char* fingerprint = NULL;
-    CHECK_NABTO_ERR(nabto_device_get_device_fingerprint(dev, &fingerprint));
-
-    ESP_LOGI(TAG, "Started nabto device with fingerprint %s", fingerprint);
-    nabto_device_string_free(fingerprint);
-
-    ESP_LOGI(TAG, "Pairring string: p=%s,d=%s,pwd=%s,sct=%s", CONFIG_EXAMPLE_NABTO_PRODUCT_ID,CONFIG_EXAMPLE_NABTO_DEVICE_ID, "pairpsw", sct);
-
-    
-    struct device_event_handler eh;
-    device_event_handler_init(&eh, dev);
-
-    struct connection_event_handler ceh;
-    connection_event_handler_init(&ceh, dev);
-
-    
-    esp_log_level_set("*", ESP_LOG_VERBOSE);
     esp_log_level_set(TAG, ESP_LOG_VERBOSE);
-    esp_log_level_set("TCP_SERVER_STREAM", ESP_LOG_DEBUG);
-    esp_log_level_set(LOGM, ESP_LOG_DEBUG);
+
+    int listen_sock;
+    struct sockaddr_in servaddr, cliaddr;
+
     
-    
-    char addr_str[128];
-    int addr_family = AF_INET;
-    int ip_protocol = 0;
-    int keepAlive = 1;
-    int keepIdle = CONFIG_TCP_SERVER_KEEPALIVE_IDLE;
-    int keepInterval = CONFIG_TCP_SERVER_KEEPALIVE_INTERVAL;
-    int keepCount = CONFIG_TCP_SERVER_KEEPALIVE_COUNT;
-    struct sockaddr_storage dest_addr;
-    
-    if (addr_family == AF_INET) {
-        struct sockaddr_in *dest_addr_ip4 = (struct sockaddr_in *)&dest_addr;
-        //dest_addr_ip4->sin_addr.s_addr = inet_addr("127.0.0.1");
-        dest_addr_ip4->sin_addr.s_addr = htonl(INADDR_ANY);
-        dest_addr_ip4->sin_family = AF_INET;
-        dest_addr_ip4->sin_port = htons(8000);
-        ip_protocol = IPPROTO_IP;
+    // Creating socket file descriptor
+    if ((listen_sock = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
+        ESP_LOGE(TAG, "socket creation failure");
+        return;
     }
-    int listen_sock = socket(addr_family, SOCK_STREAM, ip_protocol);
-    if (listen_sock < 0) {
-        ESP_LOGE(TAG, "Unable to create socket: errno %d", errno);
+    
+    memset(&servaddr, 0, sizeof(servaddr));
+    memset(&cliaddr, 0, sizeof(cliaddr));
+    
+    // Server information
+    servaddr.sin_family = AF_INET;
+    servaddr.sin_port = htons(8000);
+    servaddr.sin_addr.s_addr = inet_addr("127.0.0.1");
+
+    // Bind the socket to the port
+    if (bind(listen_sock, (struct sockaddr *)&servaddr, sizeof(servaddr)) < 0) {
+        ESP_LOGE(TAG, "bind failure");
+        close(listen_sock);
         goto _exit;
     }
-    int opt = 1;
-    setsockopt(listen_sock, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
+    // Listen for incoming connections
+    if (listen(listen_sock, 5) < 0) {
+        ESP_LOGE(TAG, "listen failure");
+        close(listen_sock);
+            goto _exit;
+    }
 
     
     ESP_LOGI(TAG, "Socket created");
     
-    int err = bind(listen_sock, (struct sockaddr *)&dest_addr, sizeof(dest_addr));
-    if (err != 0) {
-        ESP_LOGE(TAG, "Socket unable to bind: errno %d", errno);
-        ESP_LOGE(TAG, "IPPROTO: %d", addr_family);
-        goto _exit;
-    }
-    ESP_LOGI(TAG, "Socket bound, port %d", 8000);
-
-    
-    err = listen(listen_sock, 1);
-    if (err != 0) {
-        ESP_LOGE(TAG, "Error occurred during listen: errno %d", errno);
-        goto _exit;
-    }
-
-
-    
-    
-    ESP_LOGI(TAG, "Socket listening");
-
     while(true) {
+
+        struct sockaddr_in source_addr;
+        socklen_t slen;
+            
+
+        ESP_LOGI(TAG, "Waiting for incomming sockets");
+
+        //while(true) { vTaskDelay(10000 / portTICK_PERIOD_MS);}
+
         
-        struct sockaddr_storage source_addr; // Large enough for both IPv4 or IPv6
-        socklen_t addr_len = sizeof(source_addr);
-        int sock = accept(listen_sock, (struct sockaddr *)&source_addr, &addr_len);
+        memset(&source_addr, 0, sizeof(source_addr));
+        slen = sizeof(source_addr);
+        int sock = accept(listen_sock, (struct sockaddr *)&source_addr, &slen);
+
+
+        
+        ESP_LOGI(TAG, "Accepted socket");
+
+
+        
         if (sock < 0) {
             ESP_LOGE(TAG, "Unable to accept connection: errno %d", errno);
             goto _exit;
         }
     
-        // Set tcp keepalive option
-        setsockopt(sock, SOL_SOCKET, SO_KEEPALIVE, &keepAlive, sizeof(int));
-        setsockopt(sock, IPPROTO_TCP, TCP_KEEPIDLE, &keepIdle, sizeof(int));
-        setsockopt(sock, IPPROTO_TCP, TCP_KEEPINTVL, &keepInterval, sizeof(int));
-        setsockopt(sock, IPPROTO_TCP, TCP_KEEPCNT, &keepCount, sizeof(int));
-        // Convert ip address to string
-        if (source_addr.ss_family == PF_INET) {
-        inet_ntoa_r(((struct sockaddr_in *)&source_addr)->sin_addr, addr_str, sizeof(addr_str) - 1);
-        }
-    
-        ESP_LOGI(TAG, "Socket accepted ip address: %s", addr_str);
 
         
         /*

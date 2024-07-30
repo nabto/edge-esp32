@@ -136,7 +136,7 @@ static esp_err_t _tcp_server_write(audio_element_handle_t self, char *buffer, in
     for(int i=0;i<len;i++) {
         sum += buffer[i];
     }
-    printf("socket:%d . buffer sum: %d \n", tcp->connect_sock, sum);
+    //printf("socket:%d . buffer sum: %d \n", tcp->connect_sock, sum);
     ESP_LOGD(TAG, "socket:%d . buffer sum: %d ", tcp->connect_sock, sum);
     
     wlen = write(tcp->connect_sock, buffer, len);
