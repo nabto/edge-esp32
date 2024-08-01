@@ -3,8 +3,6 @@
 
 #include "tcptunnel_iam.h"
 
-#include <modules/iam/nm_iam_serializer.h>
-
 #include <cjson/cJSON.h>
 
 #define TAG "tcptunnel_iam"

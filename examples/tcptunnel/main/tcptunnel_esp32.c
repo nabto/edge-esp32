@@ -116,6 +116,7 @@ void app_main(void)
 
     ESP_LOGI(TAG, "Started nabto device with fingerprint %s", fingerprint);
     nabto_device_string_free(fingerprint);
+    ESP_LOGI(TAG, "Pairring string:%s", tcptunnel_iam_create_pairing_string(&iam.iam, CONFIG_EXAMPLE_NABTO_PRODUCT_ID,CONFIG_EXAMPLE_NABTO_DEVICE_ID));
 
     struct device_event_handler eh;
     device_event_handler_init(&eh, dev);
