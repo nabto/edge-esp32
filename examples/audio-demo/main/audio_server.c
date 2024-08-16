@@ -172,7 +172,7 @@ void audio_server(void*) {
         // raw i2s cannot handle mono and 8000 .. very poor document 
         //
         rsp_filter_cfg_t rsp_cfg = DEFAULT_RESAMPLE_FILTER_CONFIG();
-        rsp_cfg.src_rate = 16000;
+        rsp_cfg.src_rate = 8000;
         rsp_cfg.src_ch = 1;
         rsp_cfg.dest_rate = 16000;
         rsp_cfg.dest_ch = 2;
