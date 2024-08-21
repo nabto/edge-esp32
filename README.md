@@ -4,6 +4,19 @@ This repository includes examples of how to make a Nabto Edge integration using 
 
 For more information about using the Nabto Edge Embedded SDK with ESP32, read our [ESP32 Platform Guide](https://docs.nabto.com/developer/platforms/embedded/esp32.html). For a general introduction to Nabto Edge, please see https://docs.nabto.com.
 
+## Logging in examples
+
+Each component uses its own log module. The Nabto Embedded SDK core logs are mapped to ESP logs with the Nabto `trace` level mapped to the ESP `verbose` level.
+
+To set the log level for the entire application, use `idf.py menuconfig`, navigate to "Component config" -> "Log output" -> "Default log verbosity".
+
+To set the log level for individual log modules, open the main function source code for the particular example and set the log level for the particular log module eg.:
+
+```
+esp_log_level_set("iam", ESP_LOG_VERBOSE);
+```
+Then set the maximum log verbosity to `Verbose` using `idf.py menuconfig` and navigating to "Component config" -> "Log output" -> "Maximum log verbosity".
+
 ## examples/thermostat
 
 The thermostat example is a port of the thermostat example found in the Nabto Edge Embedded SDK.

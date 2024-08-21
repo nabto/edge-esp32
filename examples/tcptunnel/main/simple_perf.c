@@ -19,7 +19,7 @@
 #include "esp_system.h"
 
 
-    
+
 //static struct nn_log* perf_logger;
 static const char* LOGM = "perf_server";
 
@@ -59,16 +59,16 @@ void perf_task(void *pvParameter) {
     char buffer[READSIZE];
     struct sockaddr_in servaddr, cliaddr;
     socklen_t clilen;
-    
+
     // Creating socket file descriptor
     if ((listenfd = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
         ESP_LOGE(LOGM, "socket creation failure");
         return;
     }
-    
+
     memset(&servaddr, 0, sizeof(servaddr));
     memset(&cliaddr, 0, sizeof(cliaddr));
-    
+
     // Server information
     servaddr.sin_family = AF_INET;
     servaddr.sin_port = htons(PORT);
@@ -88,14 +88,14 @@ void perf_task(void *pvParameter) {
     }
 
     while(true) {
-    
+
         if ((conn_sock = accept(listenfd, (struct sockaddr *)&cliaddr, &clilen)) < 0) {
             ESP_LOGE(LOGM, "accept failure");
             return;
         }
-        
+
         ESP_LOGI(LOGM, "Socket accepted");
-        
+
         fd_set readfds;
         fd_set writefds;
         struct timeval tv;
@@ -107,26 +107,26 @@ void perf_task(void *pvParameter) {
         ticks_from_last = xTaskGetTickCount();
         ticks_res = 5000 / portTICK_PERIOD_MS; // Log every 5 seconds
         ESP_LOGI(LOGM, "Tick resolution:%d", ticks_res);
-        
+
         while(true) {
-            
+
             FD_ZERO(&readfds);
             FD_ZERO(&writefds);
             FD_SET(conn_sock, &readfds);
             FD_SET(conn_sock, &writefds);
-            
+
             tv.tv_sec = 0;
             tv.tv_usec = 500; // 5 milliseconds timeout
-            
+
             int activity = select(conn_sock + 1, &readfds, &writefds, NULL, &tv);
             if (activity < 0) {
                 ESP_LOGE(LOGM, "select error");
                 return;
-                
+
             } else if (activity == 0) {
                 // Timeout occurred
             }
-            
+
             if (FD_ISSET(conn_sock, &readfds)) {
                 n = 0;
                 n = read(conn_sock, buffer, READSIZE);
@@ -151,23 +151,23 @@ void perf_task(void *pvParameter) {
 
             int ticks_gone = xTaskGetTickCount() - ticks_from_last;
             if(ticks_gone >= ticks_res) {
-                
+
                 ESP_LOGI(LOGM, "write bytes:%d, bandwidth:%0.1f bytes/sec", write_bytes, ((float)write_bytes)*1000 / pdTICKS_TO_MS(ticks_gone));
                 ESP_LOGI(LOGM, "read bytes:%d, bandwidth:%.1f bytes/sec", read_bytes, ((float)read_bytes)*1000 / pdTICKS_TO_MS(ticks_gone));
                 write_bytes=0;
                 read_bytes=0;
                 ticks_from_last = xTaskGetTickCount();
             }
-            
-            
+
+
         }
-        
+
       _socket_close:
         ESP_LOGE(LOGM, "Close socket");
         close(conn_sock);
-        
+
     }
-    
-        
+
+
 }
 

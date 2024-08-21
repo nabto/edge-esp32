@@ -22,6 +22,7 @@
 // #include "print_stats.h"
 
 static const char* TAG = "TcpTunnel";
+static const char* LOGM = "nabto_core";
 
 #define CHECK_NABTO_ERR(err) do { if (err != NABTO_DEVICE_EC_OK) { ESP_LOGE(TAG, "Unexpected error at %s:%d, %s", __FILE__, __LINE__, nabto_device_error_get_message(err) ); esp_restart(); } } while (0)
 #define CHECK_NULL(ptr) do { if (ptr == NULL) { ESP_LOGE(TAG, "Unexpected out of memory at %s:%d", __FILE__, __LINE__); esp_restart(); } } while (0)
@@ -31,7 +32,6 @@ struct use_all_memory_item {
     uint8_t buffer[1024];
 };
 
-static const char* LOGM = "nabto";
 void logCallback(NabtoDeviceLogMessage* msg, void* data)
 {
     if (msg->severity == NABTO_DEVICE_LOG_ERROR) {
@@ -57,6 +57,10 @@ void app_main(void)
     ESP_ERROR_CHECK(ret);
 
     nabto_esp32_example_init_wifi();
+
+    // esp_log_level_set(LOGM, ESP_LOG_VERBOSE);
+    // esp_log_level_set(TAG, ESP_LOG_VERBOSE);
+    // esp_log_level_set("iam", ESP_LOG_VERBOSE);
 
     nvs_handle_t nvsHandle;
     ret = nvs_open("nabto", NVS_READWRITE, &nvsHandle);
