@@ -4,21 +4,27 @@
 #include "tcptunnel_iam.h"
 
 #include <cjson/cJSON.h>
+#include "esp_log.h"
 
 #define TAG "tcptunnel_iam"
 
 struct nm_iam_state* tcptunnel_create_default_iam_state(NabtoDevice* device)
 {
     struct nm_iam_state* state = nm_iam_state_new();
+    char* pwd = random_password(12);
+    char* sct = NULL;
+    if (state == NULL || pwd == NULL || nabto_device_create_server_connect_token(device, &sct) != NABTO_DEVICE_EC_OK) {
+        ESP_LOGE(TAG, "Failed to allocate default iam state, pairing password, or pairing SCT");
+        return NULL;
+    }
     nm_iam_state_set_open_pairing_role(state, "Administrator");
     nm_iam_state_set_local_initial_pairing(state, false);
     nm_iam_state_set_local_open_pairing(state, true);
-    nm_iam_state_set_password_open_password(state, random_password(12));
+    nm_iam_state_set_password_open_password(state, pwd);
     nm_iam_state_set_password_open_pairing(state, true);
-    char* sct = NULL;
-    nabto_device_create_server_connect_token(device, &sct);
     nm_iam_state_set_password_open_sct(state, sct);
     nabto_device_string_free(sct);
+    free(pwd);
     return state;
 }
 

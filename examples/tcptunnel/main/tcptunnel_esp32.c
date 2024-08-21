@@ -96,6 +96,8 @@ void app_main(void)
 
     nabto_esp32_iam_init(&iam, dev, iamConfig, defaultIamState, nvsHandle);
 
+    nm_iam_state_free(defaultIamState);
+
     // Either the webserver or the perf server can be enabled but not both at the same time, the reason is currently not known.
 
     start_webserver(&logger);

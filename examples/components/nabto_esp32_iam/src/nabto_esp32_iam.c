@@ -32,6 +32,7 @@ void nabto_esp32_iam_init(struct nabto_esp32_iam* esp32Iam, NabtoDevice* device,
 
     if (!nm_iam_load_configuration(&esp32Iam->iam, iamConfiguration)) {
         ESP_LOGE(TAG, "cannot load iam configuration");
+        nm_iam_configuration_free(iamConfiguration);
     }
 
     if (load_state(esp32Iam)) {
