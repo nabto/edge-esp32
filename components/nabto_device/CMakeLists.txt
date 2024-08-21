@@ -65,7 +65,8 @@ idf_component_register(
     include
   REQUIRES mbedtls pthread mdns)
 
-target_compile_definitions(${COMPONENT_TARGET} PUBLIC "-DHAVE_ARPA_INET_H -DNABTO_DEVICE_DTLS_CLIENT_ONLY")
+#target_compile_definitions(${COMPONENT_TARGET} PUBLIC "-DHAVE_ARPA_INET_H -DNABTO_DEVICE_DTLS_CLIENT_ONLY")
+target_compile_definitions(${COMPONENT_TARGET} PUBLIC "-DHAVE_ARPA_INET_H")
 
 add_custom_target(GENERATE_NABTO_VERSION ALL
   WORKING_DIRECTORY ${ne_dir}/src/core
