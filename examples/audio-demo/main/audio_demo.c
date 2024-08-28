@@ -90,8 +90,6 @@ void logCallback(NabtoDeviceLogMessage* msg, void* data)
  */
 void app_main(void)
 {
-
-
     
     // Initialize NVS
     esp_err_t ret = nvs_flash_init();
@@ -101,10 +99,7 @@ void app_main(void)
         ret = nvs_flash_init();
     }
     ESP_ERROR_CHECK(ret);
-
-    
     nabto_esp32_example_init_wifi();
-
 
     nvs_handle_t nvsHandle;
     ret = nvs_open("nabto", NVS_READWRITE, &nvsHandle);

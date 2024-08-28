@@ -126,7 +126,6 @@ void audio_server(void*) {
          */
         audio_pipeline_handle_t read_pipeline, write_pipeline;
         audio_element_handle_t tcp_stream_reader, tcp_stream_writer, i2s_stream_writer, i2s_stream_reader;
-        audio_element_handle_t wav_decoder;
 
         
         
@@ -154,13 +153,6 @@ void audio_server(void*) {
         i2s_stream_cfg_t read_i2s_cfg = I2S_STREAM_CFG_DEFAULT();
         read_i2s_cfg.type = AUDIO_STREAM_WRITER;
 
-        // Something we have tested:
-        //i2s_stream_cfg_t read_i2s_cfg = I2S_STREAM_CFG_DEFAULT_WITH_PARA(CODEC_ADC_I2S_PORT, 8000, 16, AUDIO_STREAM_WRITER);
-        //read_i2s_cfg.std_cfg.slot_cfg.slot_mask = I2S_STD_SLOT_LEFT;
-        //read_i2s_cfg.chan_cfg.dma_desc_num = 8;
-        //read_i2s_cfg.chan_cfg.dma_frame_num = 1024; // Increase buffer length
-        //read_i2s_cfg.out_rb_size = 32 * 1024; // Increase buffer to avoid missing data in bad network conditions
-        
         i2s_stream_reader = i2s_stream_init(&read_i2s_cfg);
         AUDIO_NULL_CHECK(TAG, i2s_stream_reader, return);
 
@@ -181,14 +173,6 @@ void audio_server(void*) {
         audio_element_handle_t filter = rsp_filter_init(&rsp_cfg);
         
 
-        // Create wav decoder
-        ESP_LOGI(TAG, "[2.2] Create wav decoder to decode wav file/stream");
-        wav_decoder_cfg_t wav_decoder_cfg = DEFAULT_WAV_DECODER_CONFIG();
-        wav_decoder_cfg.out_rb_size = 20*1024;
-        
-        wav_decoder = wav_decoder_init(&wav_decoder_cfg);
-        AUDIO_NULL_CHECK(TAG, wav_decoder, return);
-
         // Create tcp endpoint
         ESP_LOGI(TAG, "[2.2] Create tcp server stream to read data from");
         tcp_server_stream_cfg_t read_tcp_cfg = TCP_SERVER_STREAM_CFG_DEFAULT();
@@ -202,12 +186,10 @@ void audio_server(void*) {
 
         ESP_LOGI(TAG, "[2.3] Register all elements to audio pipeline");
         audio_pipeline_register(read_pipeline, tcp_stream_reader, "tcp");
-        audio_pipeline_register(read_pipeline, wav_decoder, "wav_decode");
         audio_pipeline_register(read_pipeline, filter, "upsample");
         audio_pipeline_register(read_pipeline, i2s_stream_reader, "i2s");
         
-        ESP_LOGI(TAG, "[2.4] Link it together tcp-->wav_decode-->upsample->i2s");
-        //audio_pipeline_link(read_pipeline, (const char *[]) {"tcp", "wav_decode", "upsample", "i2s"}, 4);
+        ESP_LOGI(TAG, "[2.4] Link it together tcp-->upsample->i2s");
         audio_pipeline_link(read_pipeline, (const char *[]) {"tcp", "upsample", "i2s"}, 3);
 
         
@@ -220,31 +202,12 @@ void audio_server(void*) {
         write_i2s_cfg.std_cfg.slot_cfg.slot_mode=1;
         write_i2s_cfg.std_cfg.slot_cfg.slot_mask=I2S_STD_SLOT_RIGHT;
 
-        //i2s_stream_cfg_t write_i2s_cfg = I2S_STREAM_CFG_DEFAULT();
-        
         write_i2s_cfg.volume=100;
-        //write_i2s_cfg.out_rb_size = 32 * 1024; // Increase buffer to avoid missing data in bad network conditions
-
         
         write_i2s_cfg.type = AUDIO_STREAM_READER;
         i2s_stream_writer = i2s_stream_init(&write_i2s_cfg);
 
         AUDIO_NULL_CHECK(TAG, i2s_stream_writer, return);
-        //i2s_stream_set_clk(i2s_stream_writer, 16000, 16, 1);
-
-
-        //
-        // Create downsample filter : 16000hz 16bit steroe -> 8000hz 16bit mono
-        // raw i2s cannot handle mono and 8000 .. very poor documentation 
-        //
-        rsp_filter_cfg_t rsp_cfg_in = DEFAULT_RESAMPLE_FILTER_CONFIG();
-        rsp_cfg_in.src_rate = 16000;
-        rsp_cfg_in.src_ch = 2;
-        rsp_cfg_in.dest_rate = 8000;
-        rsp_cfg_in.dest_ch = 1;
-        rsp_cfg_in.mode = RESAMPLE_DECODE_MODE;
-        rsp_cfg_in.complexity = 1;
-        audio_element_handle_t filter_in = rsp_filter_init(&rsp_cfg_in);
 
         
         ESP_LOGI(TAG, "[2.1c] Create tcp server stream to write data");
@@ -257,21 +220,15 @@ void audio_server(void*) {
         ESP_LOGI(TAG, "[2.2c] Register all elements to audio pipeline");
         audio_pipeline_register(write_pipeline, tcp_stream_writer, "tcp");
         audio_pipeline_register(write_pipeline, i2s_stream_writer, "i2s");
-        audio_pipeline_register(write_pipeline, filter_in, "downsample");
         
-        ESP_LOGI(TAG, "[2.3c] Link it together i2s-->downsample-->tcp");
-        //audio_pipeline_link(write_pipeline, (const char *[]) {"i2s", "downsample", "tcp"}, 3);
+        ESP_LOGI(TAG, "[2.3c] Link it together i2s-->tcp");
         audio_pipeline_link(write_pipeline, (const char *[]) {"i2s", "tcp"}, 2);
                 
         ESP_LOGI(TAG, "[ 3 ] Start pipelines");
 
-
         // Start the pipelines
         audio_pipeline_run(write_pipeline);
         audio_pipeline_run(read_pipeline);
-
-
-        
 
         ESP_LOGI(TAG, "[ 4 ] Set up  event listener");
         audio_event_iface_cfg_t evt_cfg = AUDIO_EVENT_IFACE_DEFAULT_CFG();
@@ -280,8 +237,6 @@ void audio_server(void*) {
         ESP_LOGI(TAG, "[4.1] Listening event from all elements of pipeline");
         audio_pipeline_set_listener(read_pipeline, evt);
         audio_pipeline_set_listener(write_pipeline, evt);
-        
-        
 
         // Wait on a close
         while(true) {
@@ -305,10 +260,6 @@ void audio_server(void*) {
                 break;
                 
             }
-            //   && (((int)msg.data == AEL_STATUS_STATE_STOPPED) || ((int)msg.data == AEL_STATUS_STATE_FINISHED))) {
-            
-            
-            
         }
 
 
@@ -325,18 +276,13 @@ void audio_server(void*) {
         /* Terminate the pipeline before removing the listener */
 
         audio_pipeline_unregister(read_pipeline, tcp_stream_reader);
-        //audio_pipeline_unregister(read_pipeline, i2s_stream_reader);
-        //audio_pipeline_unregister(read_pipeline, wav_decoder);
-        
+        audio_pipeline_unregister(read_pipeline, filter);
+        audio_pipeline_unregister(read_pipeline, i2s_stream_reader);
+
         audio_pipeline_unregister(write_pipeline, tcp_stream_writer);
         audio_pipeline_unregister(write_pipeline, i2s_stream_writer);
-        //audio_pipeline_unregister(write_pipeline, wav_encoder);
         
-        
-        //audio_pipeline_remove_listener(read_pipeline);
         audio_pipeline_remove_listener(write_pipeline);
-
-
         
     }
 
