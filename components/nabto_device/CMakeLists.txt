@@ -40,7 +40,6 @@ idf_component_register(
     ${ne_core_src}
     ${ne_api_src}
     ${ne_api_future_queue_src}
-    ${ne_tinycbor_src}
     ${ne_nn_src}
     ${ne_mbedtls_module_src}
     ${ne_tcp_tunnels_src}
@@ -58,9 +57,11 @@ idf_component_register(
     ${ne_esp32_dns_src}
     ${ne_esp32_mdns_src}
   INCLUDE_DIRS
-    ${ne_include_dirs}
+    ${ne_coap_include_dirs}
+    ${ne_streaming_include_dirs}
+    ${ne_stun_include_dirs}
     ${ne_nn_include_dirs}
-    ${ne_priv_include_dirs_no_tls}
+    ${ne_include_dirs}
   PRIV_INCLUDE_DIRS
     include
   REQUIRES mbedtls pthread mdns)
