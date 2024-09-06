@@ -13,6 +13,7 @@ idf_component_register(
     ${CMAKE_CURRENT_LIST_DIR}/../../../nabto-embedded-sdk/examples/thermostat/src/thermostat_set_target.c
     ${CMAKE_CURRENT_LIST_DIR}/../../../nabto-embedded-sdk/examples/thermostat/src/thermostat_state_data.c
     ${CMAKE_CURRENT_LIST_DIR}/../../../nabto-embedded-sdk/examples/thermostat/src/thermostat_state.c
+    ${CMAKE_CURRENT_LIST_DIR}/../../../nabto-embedded-sdk/examples/thermostat/src/cbor_extra.c
   INCLUDE_DIRS
     ${CMAKE_CURRENT_LIST_DIR}/../../../nabto-embedded-sdk/examples/thermostat/src
   REQUIRES
